@@ -1,0 +1,67 @@
+{
+	"stories": {
+		storyAutoHash: {
+			"currentTitle": String,
+			"storyScore": Number,
+			"type": String ["public", "private"],
+			"dateCreated": Firebase.ServerValue.TIMESTAMP,
+			"activityMeasure": Number
+		},
+		storyAutoHash: {...},
+		...
+	},
+	"storyContent": {
+		storyAutoHash: {
+			"titles": {
+				titleAutoHash: {
+					"entry": String,
+					"titleScore": Number,
+					"user": String [userName@provider]
+				},
+				titleAutoHash: {...}
+			},
+			"entries": {
+				entryAutoHash: {
+					"entry": String,
+					"entryScore": Number,
+					"user": String [userName@provider]
+				},
+				entryAutoHash: {...},
+				...
+			},
+			"currentTurn": {
+				turnEntryAutoHash: {
+					"entry": String,
+					"entryScore": Number,
+					"user": String [userName@provider]
+				},
+				turnEntryAutoHash: {...},
+				...
+			},
+			"turnStartTime": Firebase.ServerValue.TIMESTAMP
+		},
+		storyAutoHash: {...},
+		...
+	},
+	"storyMembers": {
+		storyAutoHash: {
+			authUidString: true,
+			...
+		},
+		...
+	},
+	"users": {
+		authUidString: {
+			"userName": String,
+			"email": String,
+			"provider": String,
+			"gameScore": Number,
+			"currentStory": storyAutoHash,
+			"storyContributions": {
+				storyAutoHash: true,
+				...
+			}
+		},
+		...
+	}
+}
