@@ -3,7 +3,7 @@
 		storyAutoHash: {
 			"currentTitle": String,
 			"storyScore": Number,
-			"type": String ["public", "private"],
+			"type": String ["public" | "private"],
 			"dateCreated": Firebase.ServerValue.TIMESTAMP,
 			"activityMeasure": Number
 		},
@@ -27,16 +27,13 @@
 					"user": String [userName@provider]
 				},
 				entryAutoHash: {...},
-				...
-			},
-			"currentTurn": {
-				turnEntryAutoHash: {
+				...,
+				entryAutoHash: {
+					"candidate": true,
 					"entry": String,
 					"entryScore": Number,
 					"user": String [userName@provider]
-				},
-				turnEntryAutoHash: {...},
-				...
+				}
 			},
 			"turnStartTime": Firebase.ServerValue.TIMESTAMP
 		},

@@ -1,98 +1,107 @@
 (function (document) {
   'use strict';
 
-  var storyId, storyText;
-  //var entries = 0;
-  var firebase = new Firebase('https://moword.firebaseio.com');
+  var TURN_TIME = '30';
+  var storyId, fbEntries;
+  var fb = new Firebase('https://moword.firebaseio.com');
   var storyTextElement = document.getElementById('storyText');
   var storyInputElement = document.getElementById('storyInput');
-  var turnInProgress = false;
-  var timer = document.getElementById("timer");
+  var timer = document.getElementById('timer');
   var timeOffset;
-  var winningEntry = undefined;
+  var candidates = [];
 
-  firebase.child(".info").child("serverTimeOffset").on("value", function(snap) {
+  fb.child('.info').child('serverTimeOffset').on('value', function(snap) {
     timeOffset = snap.val();
-    //var estimatedServerTimeMs = new Date().getTime() + offset;
   });
 
-  firebase.child("stories").limitToLast(10).once("value", function(snapshot) {
-    var story = snapshot.val();
-    var storyKeys;
-    //console.log(story);
-    if (story === null) {
-      storyId = firebase.child("stories").push({
-        "currentTitle": "",
-        "storyScore": 0,
-        "type": "public",
-        "dateCreated": Firebase.ServerValue.TIMESTAMP,
-        "activityMeasure": 0
+  fb.child('stories').limitToLast(10).once('value', function(snapshot) {
+    var stories = snapshot.val();
+    var storyKeys, entry;
+    var candidate, candidateCount = 0;
+    if (stories === null) {
+      storyId = fb.child('stories').push({
+        'currentTitle': '',
+        'storyScore': 0,
+        'type': 'public',
+        'dateCreated': Firebase.ServerValue.TIMESTAMP,
+        'activityMeasure': 0
       }).key();
     } else {
-      storyKeys = Object.keys(story);
+      storyKeys = Object.keys(stories);
       storyId = storyKeys[storyKeys.length - 1];
-      //console.log(storyId);
     }
+    
+    fbEntries = fb.child('storyContent').child(storyId).child('entries');
     storyTextElement.textContent = '';
     setUpConnection();
   });
 
+  function setUpConnection() {
+    fbEntries.on('child_added', function(snapshot) {
+      var entryCount, entryElement;
+      var turnEntry = snapshot.val();
+      var candidate = {};
+
+      if (!turnEntry.candidate) {
+        storyTextElement.textContent += turnEntry.entry + ' ';
+      } else {
+        candidate.key = snapshot.key();
+        candidate.turnEntry = turnEntry;
+        entryCount = candidates.push(candidate);
+        entryElement = document.getElementById('entry' + entryCount);
+        entryElement.textContent = turnEntry.entry;
+        entryElement.classList.remove('invisible');
+      }
+      if (entryCount === 1) {
+        initiateTurn();
+      }
+      if (entryCount === 5) {
+        storyInputElement.disabled = true;
+        storyInputElement.textContent = '';
+      }
+    });
+
+    fbEntries.on('child_changed', function(snapshot) {
+      var key = snapshot.key();
+      var turnEntry = snapshot.val();
+
+      if (turnEntry.candidate) {
+        candidates.forEach(function(candidate) {
+          if (candidate.key === key) {
+            candidates[candidates.indexOf(candidate)].turnEntry = turnEntry;
+          }
+        });
+      } else {
+        storyTextElement.textContent += turnEntry.entry + ' ';
+      }
+    });
+  }
+
   storyInputElement.addEventListener('keydown', function(e) {
     var entry;
-    var entryElement;
-    //console.log(e);
     if (e.keyCode === 13) {
       entry = storyInputElement.value;
-      firebase.child("storyContent").child(storyId).child("currentTurn").push({
-        "entry": entry,
-        "entryScore": 1,
-        "member": "glenn@moword"
+      fbEntries.push({
+        'candidate': true,
+        'entry': entry,
+        'entryScore': 1,
+        'member': 'glenn@moword'
       });
       storyInputElement.value = '';
     }
   });
 
-  function setUpConnection() {
-    firebase.child("storyContent").child(storyId).child("currentTurn").on("value", function(snapshot) {
-      var entryKey, entries = 0;
-      var turnEntries = snapshot.val();
-      //console.log(turnEntries);
-      var entryElement, startTime;
-      if (turnEntries && !turnInProgress) {
-        turnInProgress = true;
-        firebase.child("storyContent").child(storyId).child("turnStartTime").once("value", function(timeSnap) {
-          if (timeSnap.val()) {
-            document.getElementById("timer").textContent = 
-              30 - Math.floor((new Date().getTime() + timeOffset - timeSnap.val())/1000);
-          } else {
-            document.getElementById("timer").textContent = '30';
-            firebase.child("storyContent").child(storyId).child("turnStartTime").set(Firebase.ServerValue.TIMESTAMP);
-          }
-        });
-        setTimeout(decrementTimer, 1000);
-      }
-      for (entryKey in turnEntries) {
-        entries++;
-        entryElement = document.getElementById("entry" + entries);
-        entryElement.textContent = turnEntries[entryKey].entry;
-        entryElement.classList.remove("invisible");
-        //console.log("entry added");
-        if (!winningEntry || turnEntries[entryKey].entryScore > winningEntry.entryScore) {
-          winningEntry = turnEntries[entryKey];
-        }
-        if (entries === 5) {
-          storyInputElement.disabled = true;
-          storyInputElement.textContent = '';
-          break;
-        }
+  function initiateTurn() {
+    fb.child('storyContent').child(storyId).child('turnStartTime').once('value', function(timeSnap) {
+      if (timeSnap.val()) {
+        document.getElementById('timer').textContent = 
+          30 - Math.floor((new Date().getTime() + timeOffset - timeSnap.val())/1000);
+      } else {
+        document.getElementById('timer').textContent = TURN_TIME;
+        fb.child('storyContent').child(storyId).child('turnStartTime').set(Firebase.ServerValue.TIMESTAMP);
       }
     });
-
-    firebase.child("storyContent").child(storyId).child("entries").on("child_added", function(snapshot, prevChildKey) {
-      var entryText = snapshot.val();
-      storyTextElement.textContent += entryText.entry + " ";
-      console.log("text added to story");
-    });
+    setTimeout(decrementTimer, 1000);
   }
 
   function decrementTimer() {
@@ -101,25 +110,44 @@
       timer.textContent = Number(timer.textContent) - 1;
       setTimeout(decrementTimer, 1000);          
     } else {
-      timer.textContent = "";
+      timer.textContent = '';
       selectWinner();
     }
   }
 
   function selectWinner() {
-    var i, entryElement;
-    firebase.child("storyContent").child(storyId).child("entries").push(winningEntry);
-    firebase.child("storyContent").child(storyId).child("turnStartTime").remove();
-    firebase.child("storyContent").child(storyId).child("currentTurn").remove();
-    for (i = 1; i <= 5; i++) {
-      entryElement = document.getElementById("entry" + i);
-      entryElement.textContent = '';
-      entryElement.classList.add("invisible");
+    var i, entryElement, keysToRemove = [];
+    var winner = { 'key': '-1', 'turnEntry': { 'entryScore': -1 }};
+
+    candidates.forEach(function(candidate) {
+      if (candidate.turnEntry.entryScore > winner.turnEntry.entryScore) {
+        keysToRemove.push(winner.key);
+        winner = candidate;
+      } else {
+        keysToRemove.push(candidate.key);
+      }
+    });
+    keysToRemove.forEach(function(key) {
+      fbEntries.child(key).remove();
+    });
+    if (winner.key !== '-1') {
+      fbEntries.child(winner.key).transaction(function(currentData) {
+        if (currentData.candidate) {
+          delete currentData.candidate;
+          return currentData;
+        } else {
+          return;
+        }
+      });
+      fb.child('storyContent').child(storyId).child('turnStartTime').remove();
     }
-    turnInProgress = false;
-    winningEntry = undefined;
-    //entries = 0;
+    for (i = 1; i <= 5; i++) {
+      entryElement = document.getElementById('entry' + i);
+      entryElement.textContent = '';
+      entryElement.classList.add('invisible');
+    }
     storyInputElement.disabled = false;
+    candidates = [];
   }
 })(document);
 
