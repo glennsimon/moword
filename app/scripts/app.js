@@ -20,6 +20,22 @@
     timeOffset = snap.val();
   });
 
+  fbConnected.on('value', function(snap) {
+    connected = snap.val();
+    setOnlineStatus();
+  });
+
+  function setOnlineStatus() {
+    if (connected && uid) {
+      // We're connected and the user is authorized
+      // add this device to the users connections list
+      connection = fb.child('people').child(uid).child('online').push(true);
+      connection.onDisconnect().remove();
+    } else if (connection) {
+      connection.remove();
+    }
+  }
+
   fb.child('stories').limitToLast(10).once('value', function(snapshot) {
     var stories = snapshot.val();
     var storyKeys;
@@ -36,26 +52,10 @@
       storyKeys = Object.keys(stories);
       storyId = storyKeys[storyKeys.length - 1];
     }
-    fbConnected.on('value', function(snap) {
-      connected = snap.val() === true ? true : false;
-      setOnlineStatus();
-    });
-
     fbEntries = fb.child('storyContent').child(storyId).child('entries');
     storyTextElement.textContent = '';
     setUpConnection();
   });
-
-  function setOnlineStatus() {
-    if (connected && uid) {
-      // We're connected and the user is authorized
-      // add this device to the users connections list
-      connection = fb.child('people').child(uid).child('online').push(true);
-      connection.onDisconnect().remove();
-    } else if (uid && connection) {
-      connection.remove();
-    }
-  }
 
   function setUpConnection() {
     fbEntries.on('child_added', function(snapshot) {
@@ -158,6 +158,8 @@
         showProfile(false);
       }
       loggedIn = false;
+      uid = undefined;
+      setOnlineStatus();
     }
   });
 
@@ -183,15 +185,12 @@
     fbUser.once('value', function(snapshot) {
       returnUser = snapshot.val();
     });
-    if (returnUser) {
-      fbUser.child('online').set(true);
-    } else {
+    if (!returnUser) {
       // Use update instead of set in case there is a race condition with
       // currentStory: storyId
       fbUser.update({
         'userName': authData.google.displayName,
         'provider': 'google',
-        'online': true,
         'gameScore': 0
       });
     }
