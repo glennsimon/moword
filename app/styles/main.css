@@ -26,6 +26,31 @@ header {
 	box-shadow: 0 2px 3px;
 }
 
+#login {
+	position: absolute;
+	background-color: white;
+	width: 50%;
+	height: 50%;
+	left: 25%;
+	top: 25%;
+	z-index: 10;
+	box-shadow: 0 2px 3px;
+}
+
+#authButton, #profileGreeting {
+	margin: 0 10px;
+}
+
+#profileName {
+	font-style: italic;
+	font-weight: bold;
+}
+
+#profilePic {
+	border-radius: 50%;
+	width: 40px;
+}
+
 .entry {
 	background-color: white;
 	padding: 10px;

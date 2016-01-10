@@ -63,11 +63,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <body unresolved class="fullbleed layout vertical">
   <template is="dom-bind" id="app">
-    <header class="layout horizontal center">
+    <header id='header' class="layout horizontal center">
       <img src="images/logo43x43.png" alt="logo" style="margin: 0 5px;">
       <h2>MoWord</h2>
       <span class="flex"></span>
       <h1 id="timer"></h1>
+      <span id='profileGreeting' class='invisible'>
+        Hi,
+        <span id='profileName'></span>
+      </span>
+      <img src="" alt="profile picture" id='profilePic' class='invisible'>
+      <button id="authButton">Login</button>
     </header>
 
     <main class="layout vertical">
@@ -82,6 +88,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <div id="entry4" class="entry invisible"></div>
       <div id="entry5" class="entry invisible"></div>
     </main>
+
+    <div id="login" class="invisible">
+      <div class="layout vertical center">
+        <h2 id="loginHeading">Log In</h2>
+        <button id="googleLogin">Login with google</button>
+      </div>
+    </div>
 
     <!-- build:js scripts/app.js -->
     <script src="scripts/app.js"></script>

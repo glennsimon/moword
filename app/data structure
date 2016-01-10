@@ -40,25 +40,25 @@
 		storyAutoHash: {...},
 		...
 	},
-	"storyMembers": {
+	"people": {
+		authUidString: {
+			"userName": String,
+			"provider": String,
+			"online": {
+				deviceAutoHash: true,
+				...
+			},
+			"gameScore": Number,
+			"currentStory": storyAutoHash
+		},
+		...
+	},
+	"storyContributors": {
 		storyAutoHash: {
 			authUidString: true,
 			...
 		},
-		...
-	},
-	"users": {
-		authUidString: {
-			"userName": String,
-			"email": String,
-			"provider": String,
-			"gameScore": Number,
-			"currentStory": storyAutoHash,
-			"storyContributions": {
-				storyAutoHash: true,
-				...
-			}
-		},
+		storyAutoHash: {...},
 		...
 	}
 }

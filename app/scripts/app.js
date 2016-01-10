@@ -2,22 +2,26 @@
   'use strict';
 
   var TURN_TIME = '30';
-  var storyId, fbEntries;
+  var storyId, fbEntries, connection, uid, connected, timeOffset;
   var fb = new Firebase('https://moword.firebaseio.com');
+  var fbConnected = fb.child('.info/connected');
   var storyTextElement = document.getElementById('storyText');
   var storyInputElement = document.getElementById('storyInput');
+  var loginWindow = document.getElementById('login');
+  var googleLogin = document.getElementById('googleLogin');
+  var authButton = document.getElementById('authButton');
+  var loggedIn = false;
   var timer = document.getElementById('timer');
-  var timeOffset;
   var candidates = [];
-
-  fb.child('.info').child('serverTimeOffset').on('value', function(snap) {
+  
+  fb.child('.info').child('serverTimeOffset').once('value', function(snap) {
     timeOffset = snap.val();
   });
 
   fb.child('stories').limitToLast(10).once('value', function(snapshot) {
     var stories = snapshot.val();
-    var storyKeys, entry;
-    var candidate, candidateCount = 0;
+    var storyKeys;
+
     if (stories === null) {
       storyId = fb.child('stories').push({
         'currentTitle': '',
@@ -30,11 +34,26 @@
       storyKeys = Object.keys(stories);
       storyId = storyKeys[storyKeys.length - 1];
     }
-    
+    fbConnected.on('value', function(snap) {
+      connected = snap.val() === true ? true : false;
+      setOnlineStatus();
+    });
+
     fbEntries = fb.child('storyContent').child(storyId).child('entries');
     storyTextElement.textContent = '';
     setUpConnection();
   });
+
+  function setOnlineStatus() {
+    if (connected && uid) {
+      // We're connected and the user is authorized
+      // add this device to the users connections list
+      connection = fb.child('people').child(uid).child('online').push(true);
+      connection.onDisconnect().remove();
+    } else if (uid) {
+      connection.remove();
+    }
+  }
 
   function setUpConnection() {
     fbEntries.on('child_added', function(snapshot) {
@@ -90,6 +109,91 @@
       storyInputElement.value = '';
     }
   });
+
+  storyInputElement.addEventListener('focus', function(e) {
+    if (!loggedIn) {
+      loginWindow.classList.remove('invisible');
+    }
+  });
+
+  authButton.addEventListener('click', function(e) {
+    if (!loggedIn) {
+      loginWindow.classList.remove('invisible');
+    } else {
+      fb.unauth();
+    }
+  });
+
+  googleLogin.addEventListener('click', function(e) {
+    loginWindow.classList.add('invisible');
+    // prefer pop-ups, so we don't navigate away from the page
+    fb.authWithOAuthPopup('google', function(error, authData) {
+      if (error) {
+        if (error.code === 'TRANSPORT_UNAVAILABLE') {
+          // fall-back to browser redirects, and pick up the session
+          // automatically when we come back to the origin page
+          fb.authWithOAuthRedirect('google', function(error) {
+            console.log('Auth failure with error: ' + error);
+          });
+        }
+      } else if (authData) {
+        console.log(authData);
+      }
+    });
+  });
+
+  fb.onAuth(function(authData) {
+    if (authData) {
+      loggedIn = true;
+      authButton.textContent = 'Logout';
+      uid = authData.uid;
+      showProfile(true, authData);
+      recordAuth(authData);
+      setOnlineStatus();
+    } else {
+      authButton.textContent = 'Login';
+      if (loggedIn) {
+        showProfile(false);
+      }
+      loggedIn = false;
+    }
+  });
+
+  function showProfile(makeVisible, authData) {
+    var profilePic = document.getElementById('profilePic');
+    var profileName = document.getElementById('profileName');
+    var profileGreeting = document.getElementById('profileGreeting');
+
+    if (makeVisible) {
+      profileName.textContent = authData.google.displayName.split(' ')[0];
+      profileGreeting.classList.remove('invisible');
+      profilePic.setAttribute('src', authData.google.profileImageURL);
+      profilePic.classList.remove('invisible');
+    } else {
+      profileGreeting.classList.add('invisible');
+      profilePic.classList.add('invisible');
+    }
+  }
+
+  function recordAuth(authData) {
+    var returnUser;
+    var fbUser = fb.child('people').child(uid);
+    fbUser.once('value', function(snapshot) {
+      returnUser = snapshot.val();
+    });
+    if (returnUser) {
+      fbUser.child('online').set(true);
+    } else {
+      // Use update instead of set in case there is a race condition with
+      // currentStory: storyId
+      fbUser.update({
+        'userName': authData.google.displayName,
+        'provider': 'google',
+        'online': true,
+        'gameScore': 0
+      });
+    }
+  }
 
   function initiateTurn() {
     fb.child('storyContent').child(storyId).child('turnStartTime').once('value', function(timeSnap) {
