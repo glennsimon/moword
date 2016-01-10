@@ -1,17 +1,19 @@
 (function (document) {
   'use strict';
 
+  var querySelector = document.querySelector.bind(document);
+
   var TURN_TIME = '30';
   var storyId, fbEntries, connection, uid, connected, timeOffset;
   var fb = new Firebase('https://moword.firebaseio.com');
   var fbConnected = fb.child('.info/connected');
-  var storyTextElement = document.getElementById('storyText');
-  var storyInputElement = document.getElementById('storyInput');
-  var loginWindow = document.getElementById('login');
-  var googleLogin = document.getElementById('googleLogin');
-  var authButton = document.getElementById('authButton');
+  var storyTextElement = querySelector('#storyText');
+  var storyInputElement = querySelector('#storyInput');
+  var loginWindow = querySelector('#login');
+  var googleLogin = querySelector('#googleLogin');
+  var authButton = querySelector('#authButton');
   var loggedIn = false;
-  var timer = document.getElementById('timer');
+  var timer = querySelector('#timer');
   var candidates = [];
   
   fb.child('.info').child('serverTimeOffset').once('value', function(snap) {
@@ -50,7 +52,7 @@
       // add this device to the users connections list
       connection = fb.child('people').child(uid).child('online').push(true);
       connection.onDisconnect().remove();
-    } else if (uid) {
+    } else if (uid && connection) {
       connection.remove();
     }
   }
@@ -67,7 +69,7 @@
         candidate.key = snapshot.key();
         candidate.turnEntry = turnEntry;
         entryCount = candidates.push(candidate);
-        entryElement = document.getElementById('entry' + entryCount);
+        entryElement = querySelector('#entry' + entryCount);
         entryElement.textContent = turnEntry.entry;
         entryElement.classList.remove('invisible');
       }
@@ -110,13 +112,13 @@
     }
   });
 
-  storyInputElement.addEventListener('focus', function(e) {
+  storyInputElement.addEventListener('focus', function() {
     if (!loggedIn) {
       loginWindow.classList.remove('invisible');
     }
   });
 
-  authButton.addEventListener('click', function(e) {
+  authButton.addEventListener('click', function() {
     if (!loggedIn) {
       loginWindow.classList.remove('invisible');
     } else {
@@ -124,7 +126,7 @@
     }
   });
 
-  googleLogin.addEventListener('click', function(e) {
+  googleLogin.addEventListener('click', function() {
     loginWindow.classList.add('invisible');
     // prefer pop-ups, so we don't navigate away from the page
     fb.authWithOAuthPopup('google', function(error, authData) {
@@ -160,9 +162,9 @@
   });
 
   function showProfile(makeVisible, authData) {
-    var profilePic = document.getElementById('profilePic');
-    var profileName = document.getElementById('profileName');
-    var profileGreeting = document.getElementById('profileGreeting');
+    var profilePic = querySelector('#profilePic');
+    var profileName = querySelector('#profileName');
+    var profileGreeting = querySelector('#profileGreeting');
 
     if (makeVisible) {
       profileName.textContent = authData.google.displayName.split(' ')[0];
@@ -198,10 +200,10 @@
   function initiateTurn() {
     fb.child('storyContent').child(storyId).child('turnStartTime').once('value', function(timeSnap) {
       if (timeSnap.val()) {
-        document.getElementById('timer').textContent = 
+        querySelector('#timer').textContent = 
           30 - Math.floor((new Date().getTime() + timeOffset - timeSnap.val())/1000);
       } else {
-        document.getElementById('timer').textContent = TURN_TIME;
+        querySelector('#timer').textContent = TURN_TIME;
         fb.child('storyContent').child(storyId).child('turnStartTime').set(Firebase.ServerValue.TIMESTAMP);
       }
     });
@@ -246,7 +248,7 @@
       fb.child('storyContent').child(storyId).child('turnStartTime').remove();
     }
     for (i = 1; i <= 5; i++) {
-      entryElement = document.getElementById('entry' + i);
+      entryElement = querySelector('#entry' + i);
       entryElement.textContent = '';
       entryElement.classList.add('invisible');
     }
@@ -325,7 +327,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   // Scroll page to top and expand header
   app.scrollPageToTop = function() {
-    document.getElementById('mainContainer').scrollTop = 0;
+    querySelector('mainContainer').scrollTop = 0;
   };
 
 })(document);*/

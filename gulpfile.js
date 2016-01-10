@@ -289,8 +289,8 @@ gulp.task('default', ['clean'], function (cb) {
   runSequence(
     ['copy', 'styles'],
     'elements',
-    ['jshint', 'images', 'fonts', 'html'],
-    'vulcanize','rename-index', 'remove-old-build-index', // 'cache-config',
+    ['jshint', 'images', 'fonts', 'html'], // 'vulcanize',
+    'rename-index', 'remove-old-build-index', // 'cache-config',
     cb);
 });
 
