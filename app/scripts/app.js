@@ -55,6 +55,7 @@
     fbEntries = fb.child('storyContent').child(storyId).child('entries');
     storyTextElement.textContent = '';
     setUpConnection();
+    setUserLocation();
   });
 
   function setUpConnection() {
@@ -98,6 +99,12 @@
     });
   }
 
+  function setUserLocation() {
+    if (storyId && uid) {
+      fb.child('people').child(uid).child('currentStory').set(storyId);
+    }
+  }
+
   storyInputElement.addEventListener('keydown', function(e) {
     var entry;
     if (e.keyCode === 13) {
@@ -106,7 +113,7 @@
         'candidate': true,
         'entry': entry,
         'entryScore': 1,
-        'member': 'glenn@moword'
+        'user': uid
       });
       storyInputElement.value = '';
     }
@@ -151,7 +158,6 @@
       uid = authData.uid;
       showProfile(true, authData);
       recordAuth(authData);
-      setOnlineStatus();
     } else {
       authButton.textContent = 'Login';
       if (loggedIn) {
@@ -159,8 +165,9 @@
       }
       loggedIn = false;
       uid = undefined;
-      setOnlineStatus();
     }
+    setOnlineStatus();
+    setUserLocation();
   });
 
   function showProfile(makeVisible, authData) {
@@ -180,20 +187,19 @@
   }
 
   function recordAuth(authData) {
-    var returnUser;
     var fbUser = fb.child('people').child(uid);
+
     fbUser.once('value', function(snapshot) {
-      returnUser = snapshot.val();
+      if (!snapshot.val()) {
+        // Use update instead of set in case there is a race condition with
+        // currentStory: storyId
+        fbUser.update({
+          'userName': authData.google.displayName,
+          'provider': 'google',
+          'gameScore': 0
+        });
+      }
     });
-    if (!returnUser) {
-      // Use update instead of set in case there is a race condition with
-      // currentStory: storyId
-      fbUser.update({
-        'userName': authData.google.displayName,
-        'provider': 'google',
-        'gameScore': 0
-      });
-    }
   }
 
   function initiateTurn() {
