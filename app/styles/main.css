@@ -8,65 +8,38 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 */
 
 body {
-  background: #fafafa;
-  font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  color: #333;
+	background: #fafafa;
+	font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	color: #333;
+	margin: 0;
 }
 
 header {
-	position: absolute;
+	position: fixed;
 	background-color: white;
 	top: 0;
 	left: 0;
+	right: 0;
 	margin: 0;
 	padding: 0;
-	width: 100%;
 	height: 50px;
 	box-shadow: 0 0 5px;
+	z-index: 1;
 }
 
-main {
-	position: absolute;
-	top: 50px;
-	width: 100%;
+header > div {
+	height: 50px;
+	display: flex;
+	align-items: center;
 }
 
-footer {
-	position: absolute;
-	background-color: white;
-	bottom: 0;
-	left: 0;
-	margin: 0;
-	padding: 0;
-	width: 100%;
-	box-shadow: 0 0 5px;
+#logo {
+	margin: 0 5px;
 }
 
-#timer {
-	font-size: 2em;
-	font-weight: bold;
-}
-
-#story {
-	background-color: white;
-	margin:10px;
-	padding: 10px;
-	box-shadow: 0 2px 3px;
-}
-
-#login {
-	position: absolute;
-	background-color: white;
-	width: 50%;
-	height: 50%;
-	left: 25%;
-	top: 25%;
-	z-index: 10;
-	box-shadow: 0 2px 3px;
-}
-
-#authButton, #profileGreeting {
+#profileGreeting {
 	margin: 0 10px;
+	display: none;
 }
 
 #profileName {
@@ -76,9 +49,73 @@ footer {
 
 #profilePic {
 	border-radius: 50%;
+	height: 40px;
 	width: 40px;
+	display: none;
+}
+
+#authButton {
+	margin: 0 10px;
+}
+
+main {
+	position: relative;
+	margin-top: 50px;
+	box-sizing: border-box;
+	padding: 10px;
+	width: 100%;
+	z-index: 0;
+}
+
+footer {
+	position: fixed;
+	background-color: white;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	box-shadow: 0 0 5px;
+	z-index: 1;
+}
+
+#timer {
+	font-size: 2em;
+	font-weight: bold;
+}
+
+#story {
+	background-color: white;
+	padding: 10px;
+	box-shadow: 0 2px 3px;
+}
+
+#login {
+	position: fixed;
+	display: none;
+	flex-direction: column;
+	align-items: center;
+	background-color: white;
+	width: 50%;
+	height: 50%;
+	left: 25%;
+	top: 25%;
+	z-index: 10;
+	box-shadow: 0 2px 3px;
+}
+
+.loginButtons {
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	align-items: center;
+	justify-content: center;
 }
 
 .entry {
+	display: none;
 	background-color: white;
+	padding: 10px;
 }

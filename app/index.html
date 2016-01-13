@@ -61,44 +61,44 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 </head>
 
-<body unresolved class="fullbleed layout vertical">
+<body unresolved>
   <template is="dom-bind" id="app">
     <header id='header'>
-      <div class="layout horizontal center">
-        <img src="images/logo43x43.png" alt="logo" style="margin: 0 5px;">
+      <div>
+        <img id='logo' src="images/logo43x43.png" alt="logo">
         <span style='font-size: 1.5em; font-weight: bold;'>MoWord</span>
-        <span class="flex"></span>
+        <span style='flex: 1;'></span>
         <span id="timer"></span>
-        <span id='profileGreeting' class='invisible'>
+        <span id='profileGreeting'>
           Hi,
           <span id='profileName'></span>
         </span>
-        <img src="" alt="profile picture" id='profilePic' class='invisible'>
+        <img id='profilePic' src="" alt="profile picture">
         <button id="authButton">Login</button>
       </div>
     </header>
 
     <main>
-      <div id="story" class="layout vertical">
+      <div id="story">
         <span id="storyText"></span>
         <input id="storyInput" type="text"></input>
         <span class="flex"></span>
       </div>
     </main>
 
-    <div id="login" class="invisible">
-      <div class="layout vertical center">
-        <h2 id="loginHeading">Log In</h2>
-        <button id="googleLogin">Login with google</button>
+    <div id="login">
+      <h2 id="loginHeading">Log In</h2>
+      <div class="loginButtons">
+        <button id="googleLogin">Login with google</button>        
       </div>
     </div>
 
     <footer id="footer">
-      <div id="entry1" class="entry invisible"></div>
-      <div id="entry2" class="entry invisible"></div>
-      <div id="entry3" class="entry invisible"></div>
-      <div id="entry4" class="entry invisible"></div>
-      <div id="entry5" class="entry invisible"></div>
+      <div id="entry1" class="entry"></div>
+      <div id="entry2" class="entry"></div>
+      <div id="entry3" class="entry"></div>
+      <div id="entry4" class="entry"></div>
+      <div id="entry5" class="entry"></div>
     </footer>
 
     <!-- build:js scripts/app.js -->

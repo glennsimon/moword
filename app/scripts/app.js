@@ -72,7 +72,8 @@
         entryCount = candidates.push(candidate);
         entryElement = querySelector('#entry' + entryCount);
         entryElement.textContent = turnEntry.entry;
-        entryElement.classList.remove('invisible');
+        entryElement.style.display = 'block'; //classList.remove('invisible');
+        querySelector('main').style.marginBottom = querySelector('#footer').clientHeight + 'px';
       }
       if (entryCount === 1) {
         initiateTurn();
@@ -81,7 +82,12 @@
         storyInputElement.disabled = true;
         storyInputElement.textContent = '';
       }
+      scrollToBottom();
     });
+
+    function scrollToBottom() {
+      window.scrollTo(0, querySelector('main').clientHeight);
+    }
 
     fbEntries.on('child_changed', function(snapshot) {
       var key = snapshot.key();
@@ -95,6 +101,7 @@
         });
       } else {
         storyTextElement.textContent += turnEntry.entry + ' ';
+        querySelector('main').style.marginBottom = 0;
       }
     });
   }
@@ -121,20 +128,20 @@
 
   storyInputElement.addEventListener('focus', function() {
     if (!loggedIn) {
-      loginWindow.classList.remove('invisible');
+      loginWindow.style.display = 'flex'; //classList.remove('invisible');
     }
   });
 
   authButton.addEventListener('click', function() {
     if (!loggedIn) {
-      loginWindow.classList.remove('invisible');
+      loginWindow.style.display = 'flex'; //classList.remove('invisible');
     } else {
       fb.unauth();
     }
   });
 
   googleLogin.addEventListener('click', function() {
-    loginWindow.classList.add('invisible');
+    loginWindow.style.display = 'none'; //classList.add('invisible');
     // prefer pop-ups, so we don't navigate away from the page
     fb.authWithOAuthPopup('google', function(error, authData) {
       if (error) {
@@ -177,12 +184,12 @@
 
     if (makeVisible) {
       profileName.textContent = authData.google.displayName.split(' ')[0];
-      profileGreeting.classList.remove('invisible');
+      profileGreeting.style.display = 'block'; //classList.remove('invisible');
       profilePic.setAttribute('src', authData.google.profileImageURL);
-      profilePic.classList.remove('invisible');
+      profilePic.style.display = 'block'; //classList.remove('invisible');
     } else {
-      profileGreeting.classList.add('invisible');
-      profilePic.classList.add('invisible');
+      profileGreeting.style.display = 'none'; //classList.add('invisible');
+      profilePic.style.display = 'none'; //classList.add('invisible');
     }
   }
 
@@ -255,7 +262,7 @@
     for (i = 1; i <= 5; i++) {
       entryElement = querySelector('#entry' + i);
       entryElement.textContent = '';
-      entryElement.classList.add('invisible');
+      entryElement.style.display = 'none'; //classList.add('invisible');
     }
     storyInputElement.disabled = false;
     candidates = [];
