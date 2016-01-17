@@ -4,7 +4,7 @@
   var querySelector = document.querySelector.bind(document);
 
   var TURN_TIME = '30';
-  var storyId, fbEntries, connection, uid, connected, timeOffset;
+  var storyId, fbEntries, connection, uid, connected, timeOffset, turnObject, turnRef;
   var fb = new Firebase('https://moword.firebaseio.com');
   var fbConnected = fb.child('.info/connected');
   var storyTextElement = querySelector('#storyText');
@@ -14,7 +14,7 @@
   var authButton = querySelector('#authButton');
   var loggedIn = false;
   var timer = querySelector('#timer');
-  var candidates = [];
+  //var candidates = [];
   
   fb.child('.info').child('serverTimeOffset').once('value', function(snap) {
     timeOffset = snap.val();
@@ -54,27 +54,69 @@
     }
     fbEntries = fb.child('storyContent').child(storyId).child('entries');
     storyTextElement.textContent = '';
-    setUpConnection();
+    onContentAddedInit();
+    onContentChangedInit();
     setUserLocation();
   });
 
-  function setUpConnection() {
+  function onContentAddedInit() {
     fbEntries.on('child_added', function(snapshot) {
+      var turnEntry = snapshot.val();
+      var turnEntryKey;
+
+      if (turnEntry.entry) {
+        storyTextElement.textContent += turnEntry.entry + ' ';
+        querySelector('main').style.marginBottom = 0;
+        scrollToBottom();
+      } else {
+        turnEntryKey = snapshot.key();
+        turnObject = {};
+        turnObject.key = turnEntryKey;
+        turnObject.turnEntries = [];
+        turnObject.turnStartTime = turnEntry.turnStartTime;
+        onEntryAddedInit(turnEntryKey);
+        //initiateTurn();
+      }
+    });
+  }
+
+  function onContentChangedInit() {
+    fbEntries.on('child_changed', function(snapshot) {
+      var i, entryElement;
+      var turnEntry = snapshot.val();
+
+      if (turnEntry.entry) {
+        storyTextElement.textContent += turnEntry.entry + ' ';
+        querySelector('main').style.marginBottom = 0;
+        for (i = 1; i <= 5; i++) {
+          entryElement = querySelector('#entry' + i);
+          entryElement.textContent = '';
+          entryElement.style.display = 'none'; //classList.add('invisible');
+        }
+        storyInputElement.disabled = false;
+        fbEntries.child(snapshot.key()).child('candidates').off('child_added', turnRef);
+        turnObject = undefined;
+      }
+    });
+  }
+
+  function onEntryAddedInit(turnObjectKey) {
+    turnRef = fbEntries.child(turnObjectKey).child('candidates').on('child_added', function(snapshot) {
       var entryCount, entryElement;
       var turnEntry = snapshot.val();
       var candidate = {};
 
-      if (!turnEntry.candidate) {
-        storyTextElement.textContent += turnEntry.entry + ' ';
-      } else {
-        candidate.key = snapshot.key();
-        candidate.turnEntry = turnEntry;
-        entryCount = candidates.push(candidate);
-        entryElement = querySelector('#entry' + entryCount);
-        entryElement.textContent = turnEntry.entry;
-        entryElement.style.display = 'block'; //classList.remove('invisible');
-        querySelector('main').style.marginBottom = querySelector('#footer').clientHeight + 'px';
-      }
+      candidate.key = snapshot.key();
+      candidate.entry = turnEntry.entry;
+      candidate.entryVotes = turnEntry.entryVotes;
+      candidate.user = turnEntry.user;
+      //candidate.key = snapshot.key();
+      //candidate.turnEntry = turnEntry;
+      entryCount = turnObject.turnEntries.push(candidate);
+      entryElement = querySelector('#entry' + entryCount);
+      entryElement.textContent = turnEntry.entry;
+      entryElement.style.display = 'block'; //classList.remove('invisible');
+      querySelector('main').style.marginBottom = querySelector('#footer').clientHeight + 'px';
       if (entryCount === 1) {
         initiateTurn();
       }
@@ -84,26 +126,10 @@
       }
       scrollToBottom();
     });
+  }
 
-    function scrollToBottom() {
-      window.scrollTo(0, querySelector('main').clientHeight);
-    }
-
-    fbEntries.on('child_changed', function(snapshot) {
-      var key = snapshot.key();
-      var turnEntry = snapshot.val();
-
-      if (turnEntry.candidate) {
-        candidates.forEach(function(candidate) {
-          if (candidate.key === key) {
-            candidates[candidates.indexOf(candidate)].turnEntry = turnEntry;
-          }
-        });
-      } else {
-        storyTextElement.textContent += turnEntry.entry + ' ';
-        querySelector('main').style.marginBottom = 0;
-      }
-    });
+  function scrollToBottom() {
+    window.scrollTo(0, querySelector('main').clientHeight);
   }
 
   function setUserLocation() {
@@ -113,16 +139,29 @@
   }
 
   storyInputElement.addEventListener('keydown', function(e) {
-    var entry;
+    var entry, firstProVote;
+    var turnObjectKey;
+
     if (e.keyCode === 13) {
       entry = storyInputElement.value;
-      fbEntries.push({
-        'candidate': true,
+      firstProVote = {};
+      firstProVote.pro = {};
+      firstProVote.pro[uid] = true;
+      if (!turnObject) {
+        turnObjectKey = fbEntries.push({'turnStartTime': Firebase.ServerValue.TIMESTAMP}).key();
+      } 
+      fbEntries.child(turnObjectKey || turnObject.key).child('candidates').push({
         'entry': entry,
-        'entryScore': 1,
+        'entryVotes': firstProVote,
         'user': uid
+      },
+      function(error) {
+        if (error) {
+          console.log('Error during new word push: ' + error.toString());
+        }
       });
       storyInputElement.value = '';
+      //storyInputElement.disabled = true;  //uncomment before deploy
     }
   });
 
@@ -210,15 +249,7 @@
   }
 
   function initiateTurn() {
-    fb.child('storyContent').child(storyId).child('turnStartTime').once('value', function(timeSnap) {
-      if (timeSnap.val()) {
-        querySelector('#timer').textContent = 
-          30 - Math.floor((new Date().getTime() + timeOffset - timeSnap.val())/1000);
-      } else {
-        querySelector('#timer').textContent = TURN_TIME;
-        fb.child('storyContent').child(storyId).child('turnStartTime').set(Firebase.ServerValue.TIMESTAMP);
-      }
-    });
+    timer.textContent = Number(TURN_TIME) - Math.floor((new Date().getTime() + timeOffset - turnObject.turnStartTime)/1000);
     setTimeout(decrementTimer, 1000);
   }
 
@@ -234,38 +265,46 @@
   }
 
   function selectWinner() {
-    var i, entryElement, keysToRemove = [];
-    var winner = { 'key': '-1', 'turnEntry': { 'entryScore': -1 }};
+    var candidateScore = 0, winningScore = -1;
+    var winner = { 'key': '-1', 'entry': { 'entryScore': -1 }};
 
-    candidates.forEach(function(candidate) {
-      if (candidate.turnEntry.entryScore > winner.turnEntry.entryScore) {
-        keysToRemove.push(winner.key);
-        winner = candidate;
-      } else {
-        keysToRemove.push(candidate.key);
+    turnObject.turnEntries.forEach(function(candidate) {
+      var prop;
+      var proObject = candidate.entryVotes.pro;
+      var conObject = candidate.entryVotes.con;
+
+      for (prop in proObject) {
+          candidateScore += 1;
       }
-    });
-    keysToRemove.forEach(function(key) {
-      fbEntries.child(key).remove();
+      for (prop in conObject) {
+          candidateScore -= 1;
+      }
+      if (candidateScore > winningScore) {
+        winningScore = candidateScore;
+        winner = candidate;
+      } 
+      candidateScore = 0;
     });
     if (winner.key !== '-1') {
-      fbEntries.child(winner.key).transaction(function(currentData) {
-        if (currentData.candidate) {
-          delete currentData.candidate;
+      fbEntries.child(turnObject.key).transaction(function(currentData) {
+        if (currentData.turnStartTime) {
+          currentData.entry = currentData.candidates[winner.key].entry;
+          currentData.entryScore = winningScore;
+          currentData.user = currentData.candidates[winner.key].user;
+          delete currentData.turnStartTime;
+          delete currentData.candidates;
           return currentData;
         } else {
           return;
         }
       });
-      fb.child('storyContent').child(storyId).child('turnStartTime').remove();
     }
-    for (i = 1; i <= 5; i++) {
+    /*for (i = 1; i <= 5; i++) {
       entryElement = querySelector('#entry' + i);
       entryElement.textContent = '';
       entryElement.style.display = 'none'; //classList.add('invisible');
     }
-    storyInputElement.disabled = false;
-    candidates = [];
+    storyInputElement.disabled = false;*/
   }
 })(document);
 

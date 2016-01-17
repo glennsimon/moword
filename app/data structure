@@ -1,17 +1,58 @@
 {
+	"people": {
+		authUidString: {
+			"currentStory": storyAutoHash,
+			"gameScore": Number,
+			"online": {
+				deviceAutoHash: true,
+				...
+			},
+			"provider": String,
+			"userName": String
+		},
+		...
+	},
 	"stories": {
 		storyAutoHash: {
+			"activityMeasure": Number,
 			"currentTitle": String,
-			"storyScore": Number,
-			"type": String ["public" | "private"],
 			"dateCreated": Firebase.ServerValue.TIMESTAMP,
-			"activityMeasure": Number
+			"storyScore": Number,
+			"type": String ["public" | "private"]
 		},
 		storyAutoHash: {...},
 		...
 	},
 	"storyContent": {
 		storyAutoHash: {
+			entryAutoHash: {
+				"entry": String,
+				"entryScore": Number,
+				"user": authUidString
+			},
+			entryAutoHash: {...},
+			...,
+			entryAutoHash: {
+				"turnStartTime": Firebase.ServerValue.TIMESTAMP,
+				"candidates": {
+					entryAutoHash: {
+						"entry": String,
+						"entryVotes" {
+							"con": {
+								authUidString: true,
+								...
+							},
+							"pro": {
+								authUidString: true,
+								...
+							}
+						}
+						"user": authUidString
+					},
+					entryAutoHash: {...},
+					...
+				}
+			},
 			"titles": {
 				titleAutoHash: {
 					"entry": String,
@@ -19,38 +60,9 @@
 					"user": String [userName@provider]
 				},
 				titleAutoHash: {...}
-			},
-			"entries": {
-				entryAutoHash: {
-					"entry": String,
-					"entryScore": Number,
-					"user": String [userName@provider]
-				},
-				entryAutoHash: {...},
-				...,
-				entryAutoHash: {
-					"candidate": true,
-					"entry": String,
-					"entryScore": Number,
-					"user": String [userName@provider]
-				}
-			},
-			"turnStartTime": Firebase.ServerValue.TIMESTAMP
+			}
 		},
 		storyAutoHash: {...},
-		...
-	},
-	"people": {
-		authUidString: {
-			"userName": String,
-			"provider": String,
-			"online": {
-				deviceAutoHash: true,
-				...
-			},
-			"gameScore": Number,
-			"currentStory": storyAutoHash
-		},
 		...
 	},
 	"storyContributors": {
