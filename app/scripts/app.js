@@ -4,7 +4,7 @@
   var querySelector = document.querySelector.bind(document);
 
   var TURN_TIME = '30';
-  var storyId, fbEntries, connection, uid, connected, timeOffset, turnObject, turnRef;
+  var storyId, fbEntries, fbTurn, connection, uid, connected, timeOffset, turnStartTime; //turnObject;
   var fb = new Firebase('https://moword.firebaseio.com');
   var fbConnected = fb.child('.info/connected');
   var storyTextElement = querySelector('#storyText');
@@ -14,6 +14,8 @@
   var authButton = querySelector('#authButton');
   var loggedIn = false;
   var timer = querySelector('#timer');
+  var turnKeys = [];
+  //var turnInProgress = false;
   //var candidates = [];
   
   fb.child('.info').child('serverTimeOffset').once('value', function(snap) {
@@ -53,77 +55,60 @@
       storyId = storyKeys[storyKeys.length - 1];
     }
     fbEntries = fb.child('storyContent').child(storyId).child('entries');
+    fbTurn = fb.child('storyCurrentTurn').child(storyId);
     storyTextElement.textContent = '';
+    onTurnInit();
+    onTurnEntryAddedInit();
     onContentAddedInit();
-    onContentChangedInit();
     setUserLocation();
   });
 
-  function onContentAddedInit() {
-    fbEntries.on('child_added', function(snapshot) {
-      var turnEntry = snapshot.val();
-      var turnEntryKey;
-
-      if (turnEntry.entry) {
-        storyTextElement.textContent += turnEntry.entry + ' ';
-        querySelector('main').style.marginBottom = 0;
-        scrollToBottom();
-      } else {
-        turnEntryKey = snapshot.key();
-        turnObject = {};
-        turnObject.key = turnEntryKey;
-        turnObject.turnEntries = [];
-        turnObject.turnStartTime = turnEntry.turnStartTime;
-        onEntryAddedInit(turnEntryKey);
-        //initiateTurn();
+  function onTurnInit() {
+    fbTurn.child('turnStartTime').on('value', function(snapshot) {
+      turnStartTime = snapshot.val();
+      if (turnStartTime) {       
+        timer.textContent = Number(TURN_TIME) - 
+            Math.floor((new Date().getTime() + timeOffset - turnStartTime)/1000);
+        setTimeout(decrementTimer, 1000);
       }
     });
   }
 
-  function onContentChangedInit() {
-    fbEntries.on('child_changed', function(snapshot) {
-      var i, entryElement;
+  function onTurnEntryAddedInit() {
+    fbTurn.child('entries').on('child_added', function(snapshot) {
       var turnEntry = snapshot.val();
-
-      if (turnEntry.entry) {
-        storyTextElement.textContent += turnEntry.entry + ' ';
-        querySelector('main').style.marginBottom = 0;
-        for (i = 1; i <= 5; i++) {
-          entryElement = querySelector('#entry' + i);
-          entryElement.textContent = '';
-          entryElement.style.display = 'none'; //classList.add('invisible');
-        }
-        storyInputElement.disabled = false;
-        fbEntries.child(snapshot.key()).child('candidates').off('child_added', turnRef);
-        turnObject = undefined;
-      }
-    });
-  }
-
-  function onEntryAddedInit(turnObjectKey) {
-    turnRef = fbEntries.child(turnObjectKey).child('candidates').on('child_added', function(snapshot) {
+      var turnEntryKey = snapshot.key();
       var entryCount, entryElement;
-      var turnEntry = snapshot.val();
-      var candidate = {};
 
-      candidate.key = snapshot.key();
-      candidate.entry = turnEntry.entry;
-      candidate.entryVotes = turnEntry.entryVotes;
-      candidate.user = turnEntry.user;
-      //candidate.key = snapshot.key();
-      //candidate.turnEntry = turnEntry;
-      entryCount = turnObject.turnEntries.push(candidate);
+      entryCount = turnKeys.push(turnEntryKey); //turnObject.turnEntries.push(candidate);
       entryElement = querySelector('#entry' + entryCount);
       entryElement.textContent = turnEntry.entry;
       entryElement.style.display = 'block'; //classList.remove('invisible');
       querySelector('main').style.marginBottom = querySelector('#footer').clientHeight + 'px';
-      if (entryCount === 1) {
-        initiateTurn();
-      }
-      if (entryCount === 5) {
+      if (entryCount >= 5) {
         storyInputElement.disabled = true;
         storyInputElement.textContent = '';
       }
+      scrollToBottom();
+    });
+  }
+
+  function onContentAddedInit() {
+    fbEntries.on('child_added', function(snapshot) {
+      var i, entryElement;
+      var turnEntry = snapshot.val();
+
+      storyTextElement.textContent += turnEntry.entry + ' ';
+      querySelector('main').style.marginBottom = 0;
+      for (i = 1; i <= 5; i++) {
+        entryElement = querySelector('#entry' + i);
+        entryElement.textContent = '';
+        entryElement.style.display = 'none'; //classList.add('invisible');
+      }
+      storyInputElement.disabled = false;
+      //fbEntries.child(snapshot.key()).child('candidates').off('child_added', turnRef);
+      //turnObject = undefined;
+      turnKeys = [];
       scrollToBottom();
     });
   }
@@ -138,19 +123,18 @@
     }
   }
 
-  storyInputElement.addEventListener('keydown', function(e) {
+  storyInputElement.addEventListener('keyup', function(e) {
     var entry, firstProVote;
-    var turnObjectKey;
 
     if (e.keyCode === 13) {
       entry = storyInputElement.value;
       firstProVote = {};
       firstProVote.pro = {};
       firstProVote.pro[uid] = true;
-      if (!turnObject) {
-        turnObjectKey = fbEntries.push({'turnStartTime': Firebase.ServerValue.TIMESTAMP}).key();
+      if (!turnStartTime) {
+        fbTurn.child('turnStartTime').set(Firebase.ServerValue.TIMESTAMP);
       } 
-      fbEntries.child(turnObjectKey || turnObject.key).child('candidates').push({
+      fbTurn.child('entries').push({
         'entry': entry,
         'entryVotes': firstProVote,
         'user': uid
@@ -248,11 +232,6 @@
     });
   }
 
-  function initiateTurn() {
-    timer.textContent = Number(TURN_TIME) - Math.floor((new Date().getTime() + timeOffset - turnObject.turnStartTime)/1000);
-    setTimeout(decrementTimer, 1000);
-  }
-
   function decrementTimer() {
     var timerNumber = Number(timer.textContent);
     if (timerNumber > 1) {
@@ -266,119 +245,39 @@
 
   function selectWinner() {
     var candidateScore = 0, winningScore = -1;
-    var winner = { 'key': '-1', 'entry': { 'entryScore': -1 }};
+    var proObject, conObject, winner, key, winningKey;
 
-    turnObject.turnEntries.forEach(function(candidate) {
+    fbTurn.transaction(function(currentData) {
       var prop;
-      var proObject = candidate.entryVotes.pro;
-      var conObject = candidate.entryVotes.con;
 
-      for (prop in proObject) {
+      for (key in currentData.entries) {
+        if (!currentData.entries.hasOwnProperty(key)) {continue;}
+        proObject = currentData.entries[key].entryVotes.pro;
+        conObject = currentData.entries[key].entryVotes.con;
+        for (prop in proObject) {
           candidateScore += 1;
-      }
-      for (prop in conObject) {
-          candidateScore -= 1;
-      }
-      if (candidateScore > winningScore) {
-        winningScore = candidateScore;
-        winner = candidate;
-      } 
-      candidateScore = 0;
-    });
-    if (winner.key !== '-1') {
-      fbEntries.child(turnObject.key).transaction(function(currentData) {
-        if (currentData.turnStartTime) {
-          currentData.entry = currentData.candidates[winner.key].entry;
-          currentData.entryScore = winningScore;
-          currentData.user = currentData.candidates[winner.key].user;
-          delete currentData.turnStartTime;
-          delete currentData.candidates;
-          return currentData;
-        } else {
-          return;
         }
-      });
-    }
-    /*for (i = 1; i <= 5; i++) {
-      entryElement = querySelector('#entry' + i);
-      entryElement.textContent = '';
-      entryElement.style.display = 'none'; //classList.add('invisible');
-    }
-    storyInputElement.disabled = false;*/
+        for (prop in conObject) {
+          candidateScore -= 1;
+        }
+        if (candidateScore > winningScore) {
+          winningScore = candidateScore;
+          winningKey = key;
+        }
+        candidateScore = 0;
+      }
+      winner = {};
+      winner[winningKey] = winningScore;
+      if (winningScore > -1) {
+        currentData.winner = winner;   
+        return currentData;     
+      } else {
+        return;
+      }
+    }, function(error, wasCommitted, snapshot) {
+      console.log('Error: ' + error);
+      console.log('Committed?: ' + wasCommitted);
+      console.log('Result: ' + snapshot.val());
+    });
   }
 })(document);
-
-/*
-Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
-
-
-(function(document) {
-  'use strict';
-
-  // Grab a reference to our auto-binding template
-  // and give it some initial binding values
-  // Learn more about auto-binding templates at http://goo.gl/Dx1u2g
-  var app = document.querySelector('#app');
-
-  app.displayInstalledToast = function() {
-    // Check to make sure caching is actually enabled—it won't be in the dev environment.
-    if (!document.querySelector('platinum-sw-cache').disabled) {
-      document.querySelector('#caching-complete').show();
-    }
-  };
-
-  // Listen for template bound event to know when bindings
-  // have resolved and content has been stamped to the page
-  app.addEventListener('dom-change', function() {
-    console.log('Our app is ready to rock!');
-  });
-
-  // See https://github.com/Polymer/polymer/issues/1381
-  window.addEventListener('WebComponentsReady', function() {
-    // imports are loaded and elements have been registered
-  });
-
-  // Main area's paper-scroll-header-panel custom condensing transformation of
-  // the appName in the middle-container and the bottom title in the bottom-container.
-  // The appName is moved to top and shrunk on condensing. The bottom sub title
-  // is shrunk to nothing on condensing.
-  addEventListener('paper-header-transform', function(e) {
-    var appName = document.querySelector('#mainToolbar .app-name');
-    var middleContainer = document.querySelector('#mainToolbar .middle-container');
-    var bottomContainer = document.querySelector('#mainToolbar .bottom-container');
-    var detail = e.detail;
-    var heightDiff = detail.height - detail.condensedHeight;
-    var yRatio = Math.min(1, detail.y / heightDiff);
-    var maxMiddleScale = 0.50;  // appName max size when condensed. The smaller the number the smaller the condensed size.
-    var scaleMiddle = Math.max(maxMiddleScale, (heightDiff - detail.y) / (heightDiff / (1-maxMiddleScale))  + maxMiddleScale);
-    var scaleBottom = 1 - yRatio;
-
-    // Move/translate middleContainer
-    Polymer.Base.transform('translate3d(0,' + yRatio * 100 + '%,0)', middleContainer);
-
-    // Scale bottomContainer and bottom sub title to nothing and back
-    Polymer.Base.transform('scale(' + scaleBottom + ') translateZ(0)', bottomContainer);
-
-    // Scale middleContainer appName
-    Polymer.Base.transform('scale(' + scaleMiddle + ') translateZ(0)', appName);
-  });
-
-  // Close drawer after menu item is selected if drawerPanel is narrow
-  app.onDataRouteClick = function() {
-    var drawerPanel = document.querySelector('#paperDrawerPanel');
-    if (drawerPanel.narrow) {
-      drawerPanel.closeDrawer();
-    }
-  };
-
-  // Scroll page to top and expand header
-  app.scrollPageToTop = function() {
-    querySelector('mainContainer').scrollTop = 0;
-  };
-
-})(document);*/
