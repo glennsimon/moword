@@ -67,6 +67,9 @@
 				},
 				entryAutoHash: {...},
 				...
+			},
+			"winner": {
+				entryAutoHash: Number (where number is score)
 			}
 		},
 		storyAutoHash: {...},

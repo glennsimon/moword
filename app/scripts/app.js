@@ -3,7 +3,7 @@
 
   var querySelector = document.querySelector.bind(document);
 
-  var TURN_TIME = '30';
+  var TURN_TIME = '10';
   var storyId, fbEntries, fbTurn, connection, uid, connected, timeOffset, turnStartTime; //turnObject;
   var fb = new Firebase('https://moword.firebaseio.com');
   var fbConnected = fb.child('.info/connected');
@@ -15,7 +15,7 @@
   var loggedIn = false;
   var timer = querySelector('#timer');
   var turnKeys = [];
-  //var turnInProgress = false;
+  var turnInProgress = false;
   //var candidates = [];
   
   fb.child('.info').child('serverTimeOffset').once('value', function(snap) {
@@ -57,72 +57,105 @@
     fbEntries = fb.child('storyContent').child(storyId).child('entries');
     fbTurn = fb.child('storyCurrentTurn').child(storyId);
     storyTextElement.textContent = '';
-    onTurnInit();
-    onTurnEntryAddedInit();
-    onContentAddedInit();
+    initialize();
     setUserLocation();
   });
 
-  function onTurnInit() {
+  function initialize() {
     fbTurn.child('turnStartTime').on('value', function(snapshot) {
-      turnStartTime = snapshot.val();
-      if (turnStartTime) {       
-        timer.textContent = Number(TURN_TIME) - 
-            Math.floor((new Date().getTime() + timeOffset - turnStartTime)/1000);
-        setTimeout(decrementTimer, 1000);
-      }
+      startTurn(snapshot);
     });
-  }
-
-  function onTurnEntryAddedInit() {
     fbTurn.child('entries').on('child_added', function(snapshot) {
-      var turnEntry = snapshot.val();
-      var turnEntryKey = snapshot.key();
-      var entryCount, entryElement;
-
-      entryCount = turnKeys.push(turnEntryKey); //turnObject.turnEntries.push(candidate);
-      entryElement = querySelector('#entry' + entryCount);
-      entryElement.textContent = turnEntry.entry;
-      entryElement.style.display = 'block'; //classList.remove('invisible');
-      querySelector('main').style.marginBottom = querySelector('#footer').clientHeight + 'px';
-      if (entryCount >= 5) {
-        storyInputElement.disabled = true;
-        storyInputElement.textContent = '';
-      }
-      scrollToBottom();
+      addTurnEntry(snapshot);
+    });
+    fbTurn.on('value', function(snapshot) {
+      updateTurn(snapshot);
+    });
+    fbEntries.on('child_added', function(snapshot) {
+      addToStory(snapshot);
     });
   }
 
-  function onContentAddedInit() {
-    fbEntries.on('child_added', function(snapshot) {
-      var i, entryElement;
-      var turnEntry = snapshot.val();
+  // Initialize time at start of turn
+  function startTurn(snapshot) {
+    turnStartTime = snapshot.val();
+    if (turnStartTime && !turnInProgress) {       
+      timer.textContent = Number(TURN_TIME) - 
+          Math.floor((new Date().getTime() + timeOffset - turnStartTime)/1000);
+      setTimeout(decrementTimer, 1000);
+      turnInProgress = true;
+    }
+  }
 
-      storyTextElement.textContent += turnEntry.entry + ' ';
-      querySelector('main').style.marginBottom = 0;
-      for (i = 1; i <= 5; i++) {
-        entryElement = querySelector('#entry' + i);
-        entryElement.textContent = '';
-        entryElement.style.display = 'none'; //classList.add('invisible');
+  // Set up adding entry to choices during turn
+  function addTurnEntry(snapshot) {
+    var turnEntry = snapshot.val();
+    var turnEntryKey = snapshot.key();
+    var entryCount, entryElement;
+
+    entryCount = turnKeys.push(turnEntryKey);
+    entryElement = querySelector('#entry' + entryCount);
+    entryElement.textContent = turnEntry.entry;
+    entryElement.style.display = 'block';
+    querySelector('main').style.marginBottom = querySelector('#footer').clientHeight + 'px';
+    if (entryCount >= 5) {
+      storyInputElement.disabled = true;
+      storyInputElement.textContent = '';
+    }
+    scrollToBottom();
+  }
+
+  // Winning word to storyContent on firebase
+  function updateTurn(snapshot) {
+    var currentTurn = snapshot.val();
+    var k, key, score, winningEntry;
+
+    if (currentTurn && currentTurn.winner) {
+      for (k in currentTurn.winner) {
+        if (!currentTurn.winner.hasOwnProperty(k)) {continue;}
+        key = k;
+        score = currentTurn.winner[key];
       }
-      storyInputElement.disabled = false;
-      //fbEntries.child(snapshot.key()).child('candidates').off('child_added', turnRef);
-      //turnObject = undefined;
-      turnKeys = [];
-      scrollToBottom();
-    });
+      winningEntry = {};
+      winningEntry[key] = {};
+      winningEntry[key].entry = currentTurn.entries[key].entry;
+      winningEntry[key].user = currentTurn.entries[key].user;
+      winningEntry[key].entryScore = score;    
+      fbEntries.update(winningEntry);
+    }
+  }
+
+  // Set up adding entry to story at end of turn
+  function addToStory(snapshot) {
+    var i, entryElement;
+    var turnEntry = snapshot.val();
+
+    storyTextElement.textContent += turnEntry.entry + ' ';
+    querySelector('main').style.marginBottom = 0;
+    for (i = 1; i <= 5; i++) {
+      entryElement = querySelector('#entry' + i);
+      entryElement.textContent = '';
+      entryElement.style.display = 'none'; //classList.add('invisible');
+    }
+    storyInputElement.disabled = false;
+    turnInProgress = false;
+    fbTurn.remove();
+    turnKeys = [];
+    scrollToBottom();
   }
 
   function scrollToBottom() {
     window.scrollTo(0, querySelector('main').clientHeight);
   }
 
+  // record what story the user is currently in
   function setUserLocation() {
     if (storyId && uid) {
       fb.child('people').child(uid).child('currentStory').set(storyId);
     }
   }
 
+  // Enter an entry to start turn or add to current turn
   storyInputElement.addEventListener('keyup', function(e) {
     var entry, firstProVote;
 
@@ -151,7 +184,7 @@
 
   storyInputElement.addEventListener('focus', function() {
     if (!loggedIn) {
-      loginWindow.style.display = 'flex'; //classList.remove('invisible');
+      loginWindow.style.display = 'flex';
     }
   });
 
@@ -244,12 +277,14 @@
   }
 
   function selectWinner() {
-    var candidateScore = 0, winningScore = -1;
-    var proObject, conObject, winner, key, winningKey;
-
+    fbTurn.once('value', function(snap) {
+      console.log(snap.val());
+    });
     fbTurn.transaction(function(currentData) {
-      var prop;
+      var prop, proObject, conObject, winner, key, winningKey;
+      var candidateScore = 0, winningScore = -1; 
 
+      if (currentData === null) {return currentData;}
       for (key in currentData.entries) {
         if (!currentData.entries.hasOwnProperty(key)) {continue;}
         proObject = currentData.entries[key].entryVotes.pro;
@@ -278,6 +313,6 @@
       console.log('Error: ' + error);
       console.log('Committed?: ' + wasCommitted);
       console.log('Result: ' + snapshot.val());
-    });
+    }, false);
   }
 })(document);
