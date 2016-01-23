@@ -3,7 +3,7 @@
 
   var querySelector = document.querySelector.bind(document);
 
-  var TURN_TIME = '10';
+  var TURN_TIME = '30';
   var storyId, fbEntries, fbTurn, connection, uid, connected, timeOffset, turnStartTime; //turnObject;
   var fb = new Firebase('https://moword.firebaseio.com');
   var fbConnected = fb.child('.info/connected');
@@ -16,7 +16,6 @@
   var timer = querySelector('#timer');
   var turnKeys = [];
   var turnInProgress = false;
-  //var candidates = [];
   
   fb.child('.info').child('serverTimeOffset').once('value', function(snap) {
     timeOffset = snap.val();
@@ -62,6 +61,7 @@
   });
 
   function initialize() {
+    console.log('initializing firebase callbacks');
     fbTurn.child('turnStartTime').on('value', function(snapshot) {
       startTurn(snapshot);
     });
@@ -79,7 +79,8 @@
   // Initialize time at start of turn
   function startTurn(snapshot) {
     turnStartTime = snapshot.val();
-    if (turnStartTime && !turnInProgress) {       
+    if (turnStartTime && !turnInProgress) {
+      console.log('starting turn');
       timer.textContent = Number(TURN_TIME) - 
           Math.floor((new Date().getTime() + timeOffset - turnStartTime)/1000);
       setTimeout(decrementTimer, 1000);
@@ -89,6 +90,7 @@
 
   // Set up adding entry to choices during turn
   function addTurnEntry(snapshot) {
+    console.log('adding entry to choices');
     var turnEntry = snapshot.val();
     var turnEntryKey = snapshot.key();
     var entryCount, entryElement;
@@ -105,12 +107,13 @@
     scrollToBottom();
   }
 
-  // Winning word to storyContent on firebase
+  // Winning entry to storyContent on firebase
   function updateTurn(snapshot) {
     var currentTurn = snapshot.val();
-    var k, key, score, winningEntry;
+    var i, entryElement, k, key, score, winningEntry;
 
     if (currentTurn && currentTurn.winner) {
+      console.log('adding winning entry to storyContent');
       for (k in currentTurn.winner) {
         if (!currentTurn.winner.hasOwnProperty(k)) {continue;}
         key = k;
@@ -122,25 +125,28 @@
       winningEntry[key].user = currentTurn.entries[key].user;
       winningEntry[key].entryScore = score;    
       fbEntries.update(winningEntry);
+      fbTurn.remove();
+    }
+    // this must be a separate if statement so that all players get cleanup
+    // from previous turn after fbTurn.remove() from another player above.
+    if (currentTurn === null) {
+      for (i = 1; i <= 5; i++) {
+        entryElement = querySelector('#entry' + i);
+        entryElement.textContent = '';
+        entryElement.style.display = 'none'; //classList.add('invisible');
+      }
+      storyInputElement.disabled = false;
+      turnInProgress = false;
+      turnKeys = [];
+      scrollToBottom();
+      querySelector('main').style.marginBottom = 0;
     }
   }
 
   // Set up adding entry to story at end of turn
   function addToStory(snapshot) {
-    var i, entryElement;
-    var turnEntry = snapshot.val();
-
-    storyTextElement.textContent += turnEntry.entry + ' ';
-    querySelector('main').style.marginBottom = 0;
-    for (i = 1; i <= 5; i++) {
-      entryElement = querySelector('#entry' + i);
-      entryElement.textContent = '';
-      entryElement.style.display = 'none'; //classList.add('invisible');
-    }
-    storyInputElement.disabled = false;
-    turnInProgress = false;
-    fbTurn.remove();
-    turnKeys = [];
+    console.log('adding entry to display');
+    storyTextElement.textContent += snapshot.val().entry + ' ';
     scrollToBottom();
   }
 
@@ -277,9 +283,10 @@
   }
 
   function selectWinner() {
-    fbTurn.once('value', function(snap) {
+    console.log('adding winner to storyCurrentTurn');
+    /*fbTurn.once('value', function(snap) {
       console.log(snap.val());
-    });
+    });*/
     fbTurn.transaction(function(currentData) {
       var prop, proObject, conObject, winner, key, winningKey;
       var candidateScore = 0, winningScore = -1; 
