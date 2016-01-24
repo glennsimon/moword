@@ -114,8 +114,30 @@ footer {
 	justify-content: center;
 }
 
-.entry {
+.none {
 	display: none;
+}
+
+.entry {
+	display: flex;
+	flex-direction: row;
 	background-color: white;
-	padding: 10px;
+	align-items: center;
+}
+
+.entryText {
+	flex: 1;
+	padding: 0 10px;
+	text-align: right;
+}
+
+.entryVote {
+	box-sizing: border-box;
+	font-size: 2em;
+	border: 2px solid #333;
+	border-radius: 50%;
+	width: 40px;
+	height: 40px;
+	text-align: center;
+	margin: 2px;
 }

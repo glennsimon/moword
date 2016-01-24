@@ -4,7 +4,8 @@
   var querySelector = document.querySelector.bind(document);
 
   var TURN_TIME = '30';
-  var storyId, fbEntries, fbTurn, connection, uid, connected, timeOffset, turnStartTime; //turnObject;
+  var storyId, fbEntries, fbTurn, connection, uid, connected, timeOffset, 
+      turnStartTime, proVote, conVote; //turnObject;
   var fb = new Firebase('https://moword.firebaseio.com');
   var fbConnected = fb.child('.info/connected');
   var storyTextElement = querySelector('#storyText');
@@ -61,6 +62,13 @@
   });
 
   function initialize() {
+    var i, children;
+
+    for (i = 1; i <= 5; i++) {
+      children = querySelector('#entry' + i).children;
+      children[1].addEventListener('click', entryVote);
+      children[2].addEventListener('click', entryVote);
+    }
     console.log('initializing firebase callbacks');
     fbTurn.child('turnStartTime').on('value', function(snapshot) {
       startTurn(snapshot);
@@ -97,8 +105,9 @@
 
     entryCount = turnKeys.push(turnEntryKey);
     entryElement = querySelector('#entry' + entryCount);
-    entryElement.textContent = turnEntry.entry;
-    entryElement.style.display = 'block';
+    entryElement.classList.remove('none');
+    entryElement.classList.add('entry');
+    entryElement.children[0].textContent = turnEntry.entry;
     querySelector('main').style.marginBottom = querySelector('#footer').clientHeight + 'px';
     if (entryCount >= 5) {
       storyInputElement.disabled = true;
@@ -132,8 +141,10 @@
     if (currentTurn === null) {
       for (i = 1; i <= 5; i++) {
         entryElement = querySelector('#entry' + i);
-        entryElement.textContent = '';
-        entryElement.style.display = 'none'; //classList.add('invisible');
+        entryElement.children[0].textContent = '';
+        entryElement.classList.add('none');
+        entryElement.classList.remove('entry');
+        //entryElement.style.display = 'none'; //classList.add('invisible');
       }
       storyInputElement.disabled = false;
       turnInProgress = false;
@@ -141,6 +152,48 @@
       scrollToBottom();
       querySelector('main').style.marginBottom = 0;
     }
+  }
+
+  function entryVote(e) {
+    var source, entryIndex, vote, notVote;
+
+    source = e.srcElement;
+    entryIndex = Number(source.parentNode.id.slice(-1)) - 1;
+    vote = source.textContent === '+' ? 'pro' : 'con';
+    notVote = vote === 'pro' ? 'con' : 'pro';
+    fbTurn.child('entries').transaction(function(currentData) {
+      var key, prevProVote, prevConVote;
+
+      // cancel transaction if turn is already over
+      if (!turnInProgress) {return;}
+      if (currentData === null) {return currentData;}
+      key = turnKeys[entryIndex];
+
+      prevProVote = proVote;
+      prevConVote = conVote;
+      currentData[key].entryVotes = currentData[key].entryVotes || {};
+      currentData[key].entryVotes[vote] = currentData[key].entryVotes[vote] || {};
+      currentData[key].entryVotes[vote][uid] = true;
+      currentData[key].entryVotes[notVote] = currentData[key].entryVotes[notVote] || {};
+      delete currentData[key].entryVotes[notVote][uid];
+      if (vote === 'pro' && prevProVote) {
+        currentData[prevProVote].entryVotes = currentData[prevProVote].entryVotes || {};
+        delete currentData[prevProVote].entryVotes.pro[uid];
+        proVote = key;
+      }
+      if (vote === 'con' && prevConVote) {
+        currentData[prevConVote].entryVotes = currentData[prevConVote].entryVotes || {};
+        delete currentData[prevConVote].entryVotes.pro[uid];
+        conVote = key;
+      }
+      return currentData;     
+    }, function(error, wasCommitted, snapshot) {
+      var result = snapshot ? snapshot.val() : 'Transaction completed by another user.';
+      console.log('Error: ' + error);
+      console.log('Committed?: ' + wasCommitted);
+      console.log('Result:');
+      console.log(result);
+    }, false);
   }
 
   // Set up adding entry to story at end of turn
@@ -196,14 +249,14 @@
 
   authButton.addEventListener('click', function() {
     if (!loggedIn) {
-      loginWindow.style.display = 'flex'; //classList.remove('invisible');
+      loginWindow.style.display = 'flex';
     } else {
       fb.unauth();
     }
   });
 
   googleLogin.addEventListener('click', function() {
-    loginWindow.style.display = 'none'; //classList.add('invisible');
+    loginWindow.style.display = 'none';
     // prefer pop-ups, so we don't navigate away from the page
     fb.authWithOAuthPopup('google', function(error, authData) {
       if (error) {
@@ -246,12 +299,12 @@
 
     if (makeVisible) {
       profileName.textContent = authData.google.displayName.split(' ')[0];
-      profileGreeting.style.display = 'block'; //classList.remove('invisible');
+      profileGreeting.style.display = 'block';
       profilePic.setAttribute('src', authData.google.profileImageURL);
-      profilePic.style.display = 'block'; //classList.remove('invisible');
+      profilePic.style.display = 'block';
     } else {
-      profileGreeting.style.display = 'none'; //classList.add('invisible');
-      profilePic.style.display = 'none'; //classList.add('invisible');
+      profileGreeting.style.display = 'none';
+      profilePic.style.display = 'none';
     }
   }
 
@@ -284,29 +337,29 @@
 
   function selectWinner() {
     console.log('adding winner to storyCurrentTurn');
-    /*fbTurn.once('value', function(snap) {
-      console.log(snap.val());
-    });*/
     fbTurn.transaction(function(currentData) {
       var prop, proObject, conObject, winner, key, winningKey;
-      var candidateScore = 0, winningScore = -1; 
+      var candidateScore, winningScore = -1; 
 
-      if (currentData === null) {return currentData;}
+      // cancel transaction if turn is already over
+      if (!turnInProgress) {return;}
       for (key in currentData.entries) {
         if (!currentData.entries.hasOwnProperty(key)) {continue;}
-        proObject = currentData.entries[key].entryVotes.pro;
-        conObject = currentData.entries[key].entryVotes.con;
-        for (prop in proObject) {
-          candidateScore += 1;
-        }
-        for (prop in conObject) {
-          candidateScore -= 1;
+        candidateScore = 0;
+        if (currentData.entries[key].entryVotes) {
+          proObject = currentData.entries[key].entryVotes.pro;
+          conObject = currentData.entries[key].entryVotes.con;
+          for (prop in proObject) {
+            candidateScore += 1;
+          }
+          for (prop in conObject) {
+            candidateScore -= 1;
+          }
         }
         if (candidateScore > winningScore) {
           winningScore = candidateScore;
           winningKey = key;
         }
-        candidateScore = 0;
       }
       winner = {};
       winner[winningKey] = winningScore;
@@ -317,9 +370,11 @@
         return;
       }
     }, function(error, wasCommitted, snapshot) {
+      var result = snapshot ? snapshot.val() : 'Transaction completed by another user.';
       console.log('Error: ' + error);
       console.log('Committed?: ' + wasCommitted);
-      console.log('Result: ' + snapshot.val());
+      console.log('Result:');
+      console.log(result);
     }, false);
   }
 })(document);
