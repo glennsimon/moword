@@ -141,3 +141,7 @@ footer {
 	text-align: center;
 	margin: 2px;
 }
+
+.entryVote.selected {
+	background-color: red;
+}

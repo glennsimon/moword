@@ -4,8 +4,8 @@
   var querySelector = document.querySelector.bind(document);
 
   var TURN_TIME = '30';
-  var storyId, fbEntries, fbTurn, connection, uid, connected, timeOffset, 
-      turnStartTime, proVote, conVote; //turnObject;
+  var storyId, fbEntries, fbTurn, connection, userId, connected, timeOffset, 
+      turnStartTime; //turnObject;
   var fb = new Firebase('https://moword.firebaseio.com');
   var fbConnected = fb.child('.info/connected');
   var storyTextElement = querySelector('#storyText');
@@ -28,10 +28,10 @@
   });
 
   function setOnlineStatus() {
-    if (connected && uid) {
+    if (connected && userId) {
       // We're connected and the user is authorized
       // add this device to the users connections list
-      connection = fb.child('people').child(uid).child('online').push(true);
+      connection = fb.child('people').child(userId).child('online').push(true);
       connection.onDisconnect().remove();
     } else if (connection) {
       connection.remove();
@@ -76,8 +76,11 @@
     fbTurn.child('entries').on('child_added', function(snapshot) {
       addTurnEntry(snapshot);
     });
-    fbTurn.on('value', function(snapshot) {
-      updateTurn(snapshot);
+    fbTurn.on('child_added', function(snapshot) {
+      updateForWinner(snapshot);
+    });
+    fb.child('storyCurrentTurn').on('child_removed', function() { //snapshot) {
+      resetUi(); //snapshot);
     });
     fbEntries.on('child_added', function(snapshot) {
       addToStory(snapshot);
@@ -108,6 +111,7 @@
     entryElement.classList.remove('none');
     entryElement.classList.add('entry');
     entryElement.children[0].textContent = turnEntry.entry;
+    entryElement.children[1].classList.add('selected');
     querySelector('main').style.marginBottom = querySelector('#footer').clientHeight + 'px';
     if (entryCount >= 5) {
       storyInputElement.disabled = true;
@@ -117,74 +121,78 @@
   }
 
   // Winning entry to storyContent on firebase
-  function updateTurn(snapshot) {
-    var currentTurn = snapshot.val();
-    var i, entryElement, k, key, score, winningEntry;
+  function updateForWinner(snapshot) {
+    var addedChild = snapshot.val();
+    var addedChildKey = snapshot.key();
 
-    if (currentTurn && currentTurn.winner) {
+    if (addedChildKey === 'winner') {
       console.log('adding winning entry to storyContent');
-      for (k in currentTurn.winner) {
-        if (!currentTurn.winner.hasOwnProperty(k)) {continue;}
-        key = k;
-        score = currentTurn.winner[key];
-      }
-      winningEntry = {};
-      winningEntry[key] = {};
-      winningEntry[key].entry = currentTurn.entries[key].entry;
-      winningEntry[key].user = currentTurn.entries[key].user;
-      winningEntry[key].entryScore = score;    
-      fbEntries.update(winningEntry);
+      fbEntries.update(addedChild);
       fbTurn.remove();
     }
-    // this must be a separate if statement so that all players get cleanup
-    // from previous turn after fbTurn.remove() from another player above.
-    if (currentTurn === null) {
+  }
+
+  // reset user interface after turn ends
+  function resetUi() { //snapshot) {
+    var i, entryElement;
+    //var val = snapshot.val();
+    //var key = snapshot.key();
+
+    //if (snapshot.val().winner) {
       for (i = 1; i <= 5; i++) {
         entryElement = querySelector('#entry' + i);
         entryElement.children[0].textContent = '';
         entryElement.classList.add('none');
         entryElement.classList.remove('entry');
-        //entryElement.style.display = 'none'; //classList.add('invisible');
+        entryElement.children[1].classList.remove('selected');
+        entryElement.children[2].classList.remove('selected');
       }
       storyInputElement.disabled = false;
       turnInProgress = false;
       turnKeys = [];
       scrollToBottom();
       querySelector('main').style.marginBottom = 0;
-    }
+    //}
   }
 
   function entryVote(e) {
-    var source, entryIndex, vote, notVote;
+    var i, source, entryIndex, vote;
 
     source = e.srcElement;
     entryIndex = Number(source.parentNode.id.slice(-1)) - 1;
     vote = source.textContent === '+' ? 'pro' : 'con';
-    notVote = vote === 'pro' ? 'con' : 'pro';
+    for (i = 1; i <= 5; i++) {
+      if (vote === 'pro') {
+        querySelector('#entry' + i).children[1].classList.remove('selected');
+      } else {
+        querySelector('#entry' + i).children[2].classList.remove('selected');
+      }
+    }
+    source.classList.add('selected');
+    source.parentNode.children[vote === 'pro' ? 2 : 1].classList.remove('selected');
     fbTurn.child('entries').transaction(function(currentData) {
-      var key, prevProVote, prevConVote;
+      var key, entry;
 
       // cancel transaction if turn is already over
       if (!turnInProgress) {return;}
       if (currentData === null) {return currentData;}
       key = turnKeys[entryIndex];
-
-      prevProVote = proVote;
-      prevConVote = conVote;
-      currentData[key].entryVotes = currentData[key].entryVotes || {};
-      currentData[key].entryVotes[vote] = currentData[key].entryVotes[vote] || {};
-      currentData[key].entryVotes[vote][uid] = true;
-      currentData[key].entryVotes[notVote] = currentData[key].entryVotes[notVote] || {};
-      delete currentData[key].entryVotes[notVote][uid];
-      if (vote === 'pro' && prevProVote) {
-        currentData[prevProVote].entryVotes = currentData[prevProVote].entryVotes || {};
-        delete currentData[prevProVote].entryVotes.pro[uid];
-        proVote = key;
+      for (entry in currentData) {
+        currentData[entry].entryVotes = currentData[entry].entryVotes || {};
+        currentData[entry].entryVotes.pro = currentData[entry].entryVotes.pro || {};
+        currentData[entry].entryVotes.con = currentData[entry].entryVotes.con || {};
+        if (vote === 'pro') {
+          delete currentData[entry].entryVotes.pro[userId];
+        } else {
+          delete currentData[entry].entryVotes.con[userId];
+        }
       }
-      if (vote === 'con' && prevConVote) {
-        currentData[prevConVote].entryVotes = currentData[prevConVote].entryVotes || {};
-        delete currentData[prevConVote].entryVotes.pro[uid];
-        conVote = key;
+      if (vote === 'pro') {
+        currentData[key].entryVotes.pro[userId] = true;
+        delete currentData[key].entryVotes.con[userId];
+      } else {
+        currentData[key].entryVotes.con[userId] = true;
+        delete currentData[key].entryVotes.pro[userId];
       }
       return currentData;     
     }, function(error, wasCommitted, snapshot) {
@@ -209,8 +217,8 @@
 
   // record what story the user is currently in
   function setUserLocation() {
-    if (storyId && uid) {
-      fb.child('people').child(uid).child('currentStory').set(storyId);
+    if (storyId && userId) {
+      fb.child('people').child(userId).child('currentStory').set(storyId);
     }
   }
 
@@ -222,14 +230,14 @@
       entry = storyInputElement.value;
       firstProVote = {};
       firstProVote.pro = {};
-      firstProVote.pro[uid] = true;
+      firstProVote.pro[userId] = true;
       if (!turnStartTime) {
         fbTurn.child('turnStartTime').set(Firebase.ServerValue.TIMESTAMP);
       } 
       fbTurn.child('entries').push({
         'entry': entry,
         'entryVotes': firstProVote,
-        'user': uid
+        'user': userId
       },
       function(error) {
         if (error) {
@@ -237,7 +245,7 @@
         }
       });
       storyInputElement.value = '';
-      //storyInputElement.disabled = true;  //uncomment before deploy
+      storyInputElement.disabled = true;  //uncomment before deploy
     }
   });
 
@@ -277,7 +285,7 @@
     if (authData) {
       loggedIn = true;
       authButton.textContent = 'Logout';
-      uid = authData.uid;
+      userId = authData.uid;
       showProfile(true, authData);
       recordAuth(authData);
     } else {
@@ -286,7 +294,7 @@
         showProfile(false);
       }
       loggedIn = false;
-      uid = undefined;
+      userId = undefined;
     }
     setOnlineStatus();
     setUserLocation();
@@ -309,7 +317,7 @@
   }
 
   function recordAuth(authData) {
-    var fbUser = fb.child('people').child(uid);
+    var fbUser = fb.child('people').child(userId);
 
     fbUser.once('value', function(snapshot) {
       if (!snapshot.val()) {
@@ -361,12 +369,16 @@
           winningKey = key;
         }
       }
-      winner = {};
-      winner[winningKey] = winningScore;
       if (winningScore > -1) {
+        winner = {};
+        winner[winningKey] = {};
+        winner[winningKey].entry = currentData.entries[winningKey].entry;
+        winner[winningKey].user = currentData.entries[winningKey].user;
+        winner[winningKey].entryScore = winningScore;
         currentData.winner = winner;   
         return currentData;     
       } else {
+        fbTurn.remove();
         return;
       }
     }, function(error, wasCommitted, snapshot) {

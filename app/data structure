@@ -69,7 +69,11 @@
 				...
 			},
 			"winner": {
-				entryAutoHash: Number (where number is score)
+				entryAutoHash{
+					"entry": String,
+					"entryScore": Number,
+					"user": authUidString
+				}
 			}
 		},
 		storyAutoHash: {...},
