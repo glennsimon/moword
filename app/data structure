@@ -47,7 +47,7 @@
 		storyAutoHash: {...},
 		...
 	},
-	"storyCurrentTurn": {
+	"turnEntries": {
 		storyAutoHash: {
 			"turnStartTime": Firebase.ServerValue.TIMESTAMP,
 			"entries": {
@@ -67,18 +67,11 @@
 				},
 				entryAutoHash: {...},
 				...
-			},
-			"winner": {
-				entryAutoHash{
-					"entry": String,
-					"entryScore": Number,
-					"user": authUidString
-				}
 			}
 		},
 		storyAutoHash: {...},
 		...
-	},
+	}
 	"storyContributors": {
 		storyAutoHash: {
 			authUidString: true,

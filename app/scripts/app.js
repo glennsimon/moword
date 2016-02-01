@@ -3,9 +3,9 @@
 
   var querySelector = document.querySelector.bind(document);
 
-  var TURN_TIME = '30';
-  var storyId, fbEntries, fbTurn, connection, userId, connected, timeOffset, 
-      turnStartTime; //turnObject;
+  var TURN_TIME = 30;
+  var storyId, fbEntries, fbTurn, connection, userId, connected, 
+      timeOffset, turnStartTime; //turnObject;
   var fb = new Firebase('https://moword.firebaseio.com');
   var fbConnected = fb.child('.info/connected');
   var storyTextElement = querySelector('#storyText');
@@ -17,7 +17,7 @@
   var timer = querySelector('#timer');
   var turnKeys = [];
   var turnInProgress = false;
-  
+
   fb.child('.info').child('serverTimeOffset').once('value', function(snap) {
     timeOffset = snap.val();
   });
@@ -55,7 +55,7 @@
       storyId = storyKeys[storyKeys.length - 1];
     }
     fbEntries = fb.child('storyContent').child(storyId).child('entries');
-    fbTurn = fb.child('storyCurrentTurn').child(storyId);
+    fbTurn = fb.child('turnEntries').child(storyId);
     storyTextElement.textContent = '';
     initialize();
     setUserLocation();
@@ -76,30 +76,27 @@
     fbTurn.child('entries').on('child_added', function(snapshot) {
       addTurnEntry(snapshot);
     });
-    fbTurn.on('child_added', function(snapshot) {
-      updateForWinner(snapshot);
-    });
-    fb.child('storyCurrentTurn').on('child_removed', function() { //snapshot) {
-      resetUi(); //snapshot);
-    });
     fbEntries.on('child_added', function(snapshot) {
       addToStory(snapshot);
     });
+    fb.child('turnEntries').on('child_removed', function() {
+      resetUi();
+    });
   }
 
-  // Initialize time at start of turn
+  // Initialize time at start of turn *
   function startTurn(snapshot) {
     turnStartTime = snapshot.val();
     if (turnStartTime && !turnInProgress) {
       console.log('starting turn');
-      timer.textContent = Number(TURN_TIME) - 
+      timer.textContent = TURN_TIME -
           Math.floor((new Date().getTime() + timeOffset - turnStartTime)/1000);
       setTimeout(decrementTimer, 1000);
       turnInProgress = true;
     }
   }
 
-  // Set up adding entry to choices during turn
+  // Set up adding entry to choices during turn *
   function addTurnEntry(snapshot) {
     console.log('adding entry to choices');
     var turnEntry = snapshot.val();
@@ -111,7 +108,9 @@
     entryElement.classList.remove('none');
     entryElement.classList.add('entry');
     entryElement.children[0].textContent = turnEntry.entry;
-    entryElement.children[1].classList.add('selected');
+    if (userId === turnEntry.user) {
+      entryElement.children[1].classList.add('selected');
+    }
     querySelector('main').style.marginBottom = querySelector('#footer').clientHeight + 'px';
     if (entryCount >= 5) {
       storyInputElement.disabled = true;
@@ -120,47 +119,33 @@
     scrollToBottom();
   }
 
-  // Winning entry to storyContent on firebase
-  function updateForWinner(snapshot) {
-    var addedChild = snapshot.val();
-    var addedChildKey = snapshot.key();
-
-    if (addedChildKey === 'winner') {
-      console.log('adding winning entry to storyContent');
-      fbEntries.update(addedChild);
-      fbTurn.remove();
-    }
-  }
-
-  // reset user interface after turn ends
+  // reset user interface after turn ends *
   function resetUi() { //snapshot) {
     var i, entryElement;
-    //var val = snapshot.val();
-    //var key = snapshot.key();
-
-    //if (snapshot.val().winner) {
-      for (i = 1; i <= 5; i++) {
-        entryElement = querySelector('#entry' + i);
-        entryElement.children[0].textContent = '';
-        entryElement.classList.add('none');
-        entryElement.classList.remove('entry');
-        entryElement.children[1].classList.remove('selected');
-        entryElement.children[2].classList.remove('selected');
-      }
-      storyInputElement.disabled = false;
-      turnInProgress = false;
-      turnKeys = [];
-      scrollToBottom();
-      querySelector('main').style.marginBottom = 0;
-    //}
+    
+    for (i = 1; i <= 5; i++) {
+      entryElement = querySelector('#entry' + i);
+      entryElement.children[0].textContent = '';
+      entryElement.classList.add('none');
+      entryElement.classList.remove('entry');
+      entryElement.children[1].classList.remove('selected');
+      entryElement.children[2].classList.remove('selected');
+    }
+    storyInputElement.disabled = false;
+    turnInProgress = false;
+    turnKeys = [];
+    scrollToBottom();
+    querySelector('main').style.marginBottom = 0;
   }
 
+  // enter vote for one of the choices *
   function entryVote(e) {
-    var i, source, entryIndex, vote;
+    var i, source, entryIndex, vote, antiVote;
 
     source = e.srcElement;
     entryIndex = Number(source.parentNode.id.slice(-1)) - 1;
     vote = source.textContent === '+' ? 'pro' : 'con';
+    antiVote = vote === 'pro' ? 'con' : 'pro';
     for (i = 1; i <= 5; i++) {
       if (vote === 'pro') {
         querySelector('#entry' + i).children[1].classList.remove('selected');
@@ -170,41 +155,31 @@
     }
     source.classList.add('selected');
     source.parentNode.children[vote === 'pro' ? 2 : 1].classList.remove('selected');
-    fbTurn.child('entries').transaction(function(currentData) {
+    fbTurn.child('entries').once('value', function(snapshot) {
       var key, entry;
+      var entries = snapshot.val();
 
       // cancel transaction if turn is already over
       if (!turnInProgress) {return;}
-      if (currentData === null) {return currentData;}
-      key = turnKeys[entryIndex];
-      for (entry in currentData) {
-        currentData[entry].entryVotes = currentData[entry].entryVotes || {};
-        currentData[entry].entryVotes.pro = currentData[entry].entryVotes.pro || {};
-        currentData[entry].entryVotes.con = currentData[entry].entryVotes.con || {};
-        if (vote === 'pro') {
-          delete currentData[entry].entryVotes.pro[userId];
-        } else {
-          delete currentData[entry].entryVotes.con[userId];
+      for (entry in entries) {
+        entries[entry].entryVotes = entries[entry].entryVotes || {};
+        entries[entry].entryVotes.pro = entries[entry].entryVotes.pro || {};
+        entries[entry].entryVotes.con = entries[entry].entryVotes.con || {};
+        // delete any previous 'pro' or 'con' vote, depending on present vote
+        if (entries[entry].entryVotes[vote][userId]) {
+          fbTurn.child('entries').child(entry).child('entryVotes').child(vote).child(userId).remove();
         }
       }
-      if (vote === 'pro') {
-        currentData[key].entryVotes.pro[userId] = true;
-        delete currentData[key].entryVotes.con[userId];
-      } else {
-        currentData[key].entryVotes.con[userId] = true;
-        delete currentData[key].entryVotes.pro[userId];
+      // add new 'pro' or 'con' vote and delete opposite
+      key = turnKeys[entryIndex];
+      fbTurn.child('entries').child(key).child('entryVotes').child(vote).child(userId).set(true);
+      if (entries[key].entryVotes.con[userId]) {
+        fbTurn.child('entries').child(key).child('entryVotes').child(antiVote).child(userId).remove();
       }
-      return currentData;     
-    }, function(error, wasCommitted, snapshot) {
-      var result = snapshot ? snapshot.val() : 'Transaction completed by another user.';
-      console.log('Error: ' + error);
-      console.log('Committed?: ' + wasCommitted);
-      console.log('Result:');
-      console.log(result);
-    }, false);
+    });
   }
 
-  // Set up adding entry to story at end of turn
+  // Set up adding entry to story at end of turn *
   function addToStory(snapshot) {
     console.log('adding entry to display');
     storyTextElement.textContent += snapshot.val().entry + ' ';
@@ -222,7 +197,7 @@
     }
   }
 
-  // Enter an entry to start turn or add to current turn
+  // Enter an entry to start turn or add to current turn *
   storyInputElement.addEventListener('keyup', function(e) {
     var entry, firstProVote;
 
@@ -345,18 +320,20 @@
 
   function selectWinner() {
     console.log('adding winner to storyCurrentTurn');
-    fbTurn.transaction(function(currentData) {
-      var prop, proObject, conObject, winner, key, winningKey;
+    fbTurn.once('value', function(snapshot) {
+      var turnData, prop, proObject, conObject, winner, key, winningKey;
       var candidateScore, winningScore = -1; 
 
-      // cancel transaction if turn is already over
-      if (!turnInProgress) {return;}
-      for (key in currentData.entries) {
-        if (!currentData.entries.hasOwnProperty(key)) {continue;}
+      turnData = snapshot.val();
+
+      // cancel if turn is already over
+      if (!turnInProgress || !turnData) {return;}
+      for (key in turnData.entries) {
+        if (!turnData.entries.hasOwnProperty(key)) {continue;}
         candidateScore = 0;
-        if (currentData.entries[key].entryVotes) {
-          proObject = currentData.entries[key].entryVotes.pro;
-          conObject = currentData.entries[key].entryVotes.con;
+        if (turnData.entries[key].entryVotes) {
+          proObject = turnData.entries[key].entryVotes.pro;
+          conObject = turnData.entries[key].entryVotes.con;
           for (prop in proObject) {
             candidateScore += 1;
           }
@@ -372,21 +349,14 @@
       if (winningScore > -1) {
         winner = {};
         winner[winningKey] = {};
-        winner[winningKey].entry = currentData.entries[winningKey].entry;
-        winner[winningKey].user = currentData.entries[winningKey].user;
+        winner[winningKey].entry = turnData.entries[winningKey].entry;
+        winner[winningKey].user = turnData.entries[winningKey].user;
         winner[winningKey].entryScore = winningScore;
-        currentData.winner = winner;   
-        return currentData;     
-      } else {
-        fbTurn.remove();
-        return;
+        fbEntries.update(winner);
       }
-    }, function(error, wasCommitted, snapshot) {
-      var result = snapshot ? snapshot.val() : 'Transaction completed by another user.';
-      console.log('Error: ' + error);
-      console.log('Committed?: ' + wasCommitted);
-      console.log('Result:');
-      console.log(result);
-    }, false);
+      fbTurn.remove();
+    });
   }
+
+  querySelector('body').onresize = scrollToBottom;
 })(document);
