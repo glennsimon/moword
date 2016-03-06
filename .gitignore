@@ -4,3 +4,4 @@ bower_components
 .tmp
 *.log
 firebase.json
+app.yaml
