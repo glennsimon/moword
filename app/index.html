@@ -1,130 +1,142 @@
 <!doctype html>
 <!--
-@license
-Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+  Material Design Lite
+  Copyright 2015 Google Inc. All rights reserved.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License
 -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="A story-building game.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MoWord</title>
 
-<html lang="">
+    <!-- Add to homescreen for Chrome on Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" sizes="192x192" href="images/android-desktop.png">
 
-<head>
-  <meta charset="utf-8">
-  <meta name="description" content="">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="generator" content="Polymer Starter Kit" />
-  <title>MoWord</title>
-  <!-- Place favicon.ico in the `app/` directory -->
+    <!-- Add to homescreen for Safari on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Material Design Lite">
+    <link rel="apple-touch-icon-precomposed" href="images/ios-desktop.png">
 
-  <!-- Chrome for Android theme color -->
-  <meta name="theme-color" content="#2E3AA1">
+    <!-- Tile icon for Win8 (144x144 + tile color) -->
+    <meta name="msapplication-TileImage" content="images/touch/ms-touch-icon-144x144-precomposed.png">
+    <meta name="msapplication-TileColor" content="#3372DF">
 
-  <!-- Web Application Manifest -->
-  <link rel="manifest" href="manifest.json">
+    <link rel="shortcut icon" href="images/favicon.png">
 
-  <!-- Tile color for Win8 -->
-  <meta name="msapplication-TileColor" content="#3372DF">
+    <!-- SEO: If your mobile URL is different from the desktop URL, add a canonical link to the desktop page https://developers.google.com/webmasters/smartphone-sites/feature-phones -->
+    <!--
+    <link rel="canonical" href="http://www.example.com/">
+    -->
 
-  <!-- Add to homescreen for Chrome on Android -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="application-name" content="PSK">
-  <link rel="icon" sizes="192x192" href="images/touch/chrome-touch-icon-192x192.png">
-
-  <!-- Add to homescreen for Safari on iOS -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Polymer Starter Kit">
-  <link rel="apple-touch-icon" href="images/touch/apple-touch-icon.png">
-
-  <!-- Tile icon for Win8 (144x144) -->
-  <meta name="msapplication-TileImage" content="images/touch/ms-touch-icon-144x144-precomposed.png">
-
-  <!-- build:css styles/main.css -->
-  <link rel="stylesheet" href="styles/main.css">
-  <!-- endbuild-->
-
-  <!-- build:js bower_components/webcomponentsjs/webcomponents-lite.min.js -->
-  <script src="bower_components/webcomponentsjs/webcomponents-lite.js"></script>
-  <!-- endbuild -->
-
-  <!-- will be replaced with elements/elements.vulcanized.html -->
-  <link rel="import" href="elements/elements.html">
-  <!-- endreplace-->
-
-  <!-- For shared styles, shared-styles.html import in elements.html -->
-  <style is="custom-style" include="shared-styles"></style>
-
-  <script src="https://cdn.firebase.com/js/client/2.3.2/firebase.js"></script>
-
-</head>
-
-<body unresolved>
-  <template is="dom-bind" id="app">
-    <header id='header'>
-      <div>
-        <img id='logo' src="images/logo43x43.png" alt="logo">
-        <span style='font-size: 1.5em; font-weight: bold;'>MoWord</span>
-        <span style='flex: 1;'></span>
-        <span id="timer"></span>
-        <span id='profileGreeting'>
-          Hi,
-          <span id='profileName'></span>
-        </span>
-        <img id='profilePic' src="" alt="profile picture">
-        <button id="authButton">Login</button>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.1.1/material.deep_purple-pink.min.css">
+    <link rel="stylesheet" href="styles/styles.css">
+    <script src="https://cdn.firebase.com/js/client/2.3.2/firebase.js"></script>
+  </head>
+  <body>
+    <div class="jpdy-layout mdl-layout mdl-js-layout mdl-layout--fixed-drawer mdl-layout--fixed-header">
+      <header class="jpdy-header mdl-layout__header mdl-color--primary mdl-color-text--white">
+        <div class="mdl-layout__header-row">
+          <img src="images/logo43x43.png" alt="logo">
+          <span class="mdl-layout-title">&nbsp;MoWord</span>
+          <div class="mdl-layout-spacer"></div>
+          <span id="mw-timer"></span>
+        </div>
+      </header>
+      <div class="mw-drawer mdl-layout__drawer mdl-color--blue-grey-900 mdl-color-text--blue-grey-50">
+        <header class="mw-drawer__header">
+          <img id="mw-profile__pic" alt="profile picture">
+          <div class="jpdy-avatar-dropdown">
+            <span id="mw-profile__name"></span>
+            <div class="mdl-layout-spacer"></div>
+            <button id="accbtn" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--icon">
+              <i class="material-icons" role="presentation">arrow_drop_down</i>
+              <span class="visuallyhidden">Accounts</span>
+            </button>
+            <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect" for="accbtn">
+              <li class="mdl-menu__item">
+                <button id="authButton" class="mdl-button mdl-js-button mdl-js-ripple-effect">Login</button>
+              </li>
+            </ul>
+          </div>
+        </header>
+        <nav class="mw-navigation mdl-navigation mdl-color--blue-grey-800">
+          <a class="mdl-navigation__link" href="#jpdy-game"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">home</i>Home</a>
+          <a class="mdl-navigation__link" href="#jpdy-scores"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">group</i>Player Scores</a>
+          <a class="mdl-navigation__link" href="#jpdy-prev-games"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">list</i>Past Games</a>
+          <a class="mdl-navigation__link" href="#jpdy-practice-nav"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">refresh</i>Practice</a>
+          <div class="mdl-layout-spacer"></div>
+        </nav>
       </div>
-    </header>
+      <main class="mdl-layout__content mdl-color--grey-100">
+        <div id="mw-story"
+            class="mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid">
+          <span id="mw-story-text"></span>
+          <span class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 150px;">
+            <input id="mw-input" class="mdl-textfield__input" type="text" 
+              pattern="[0-9]+" style="font-size: 16px">
+            <label class="mdl-textfield__label" for="mw-input">More words here...</label>
+          </span>
+          <span class="flex"></span>
+        </div>
+      </main>
 
-    <main>
-      <div id="story">
-        <span id="storyText"></span>
-        <input id="storyInput" type="text"></input>
-        <span class="flex"></span>
+      <div id="mw-login">
+        <div class="mw-login__heading">Log In</div>
+        <div class="loginButtons">
+          <button id="googleLogin">Login with google</button>        
+        </div>
       </div>
-    </main>
 
-    <div id="login">
-      <h2 id="loginHeading">Log In</h2>
-      <div class="loginButtons">
-        <button id="googleLogin">Login with google</button>        
-      </div>
+      <footer id="mw-footer">
+        <div id="mw-entry1" class="mw-entry hidden">
+          <div class="mw-entry-text"></div>
+          <div class="mw-entry-vote">+</div>
+          <div class="mw-entry-vote">-</div>
+        </div>
+        <div id="mw-entry2" class="mw-entry hidden">
+          <div class="mw-entry-text"></div>
+          <div class="mw-entry-vote">+</div>
+          <div class="mw-entry-vote">-</div>
+        </div>
+        <div id="mw-entry3" class="mw-entry hidden">
+          <div class="mw-entry-text"></div>
+          <div class="mw-entry-vote">+</div>
+          <div class="mw-entry-vote">-</div>
+        </div>
+        <div id="mw-entry4" class="mw-entry hidden">
+          <div class="mw-entry-text"></div>
+          <div class="mw-entry-vote">+</div>
+          <div class="mw-entry-vote">-</div>
+        </div>
+        <div id="mw-entry5" class="mw-entry hidden">
+          <div class="mw-entry-text"></div>
+          <div class="mw-entry-vote">+</div>
+          <div class="mw-entry-vote">-</div>
+        </div>
+      </footer>
+
     </div>
-
-    <footer id="footer">
-      <div id="entry1" class="none">
-        <div class="entryText"></div>
-        <div class="entryVote">+</div>
-        <div class="entryVote">-</div>
-      </div>
-      <div id="entry2" class="none">
-        <div class="entryText"></div>
-        <div class="entryVote">+</div>
-        <div class="entryVote">-</div>
-      </div>
-      <div id="entry3" class="none">
-        <div class="entryText"></div>
-        <div class="entryVote">+</div>
-        <div class="entryVote">-</div>
-      </div>
-      <div id="entry4" class="none">
-        <div class="entryText"></div>
-        <div class="entryVote">+</div>
-        <div class="entryVote">-</div>
-      </div>
-      <div id="entry5" class="none">
-        <div class="entryText"></div>
-        <div class="entryVote">+</div>
-        <div class="entryVote">-</div>
-      </div>
-    </footer>
-
-    <!-- build:js scripts/app.js -->
-    <script src="scripts/app.js"></script>
+    <script src="https://code.getmdl.io/1.1.1/material.min.js"></script>
+    <!-- build:js scripts/main.js -->
+    <script src="scripts/main.js"></script>
     <!-- endbuild-->
-  </template>
-</body>
-
+  </body>
 </html>

@@ -1,0 +1,260 @@
+/**
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations undjpdy-categoryer the License.
+ */
+
+html, body {
+  font-family: 'Roboto', 'Helvetica', sans-serif;
+}
+.mdl-data-table td:first-of-type, .mdl-data-table th:first-of-type {
+  text-align: left;
+}
+#mw-timer {
+  font-size: 2em;
+  font-weight: bold;
+}
+#mw-login {
+  position: fixed;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  background-color: white;
+  width: 50%;
+  height: 50%;
+  left: 25%;
+  top: 25%;
+  z-index: 10;
+  box-shadow: 0 2px 3px;
+}
+#mw-story-text {
+  font-size: 16px;
+}
+.mw-login__heading {
+  font-size: 200%;
+  text-transform: uppercase;
+}
+.loginButtons {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  align-items: center;
+  justify-content: center;
+}
+#jpdy-score-table, #jpdy-history-table {
+  min-width: 250px;
+}
+#jpdy-spinner {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  left: calc(50% - 20px);
+  top: 20%;
+}
+.jpdy-center {
+  justify-content: center;
+  align-items: center;
+}
+.jpdy-main {
+  width: 100%;
+  bottom: 0;
+}
+#jpdy-value-display {
+  font-size: 34px;
+  justify-content: center;
+}
+#jpdy-dd-value {
+  justify-content: center;
+}
+.jpdy-star {
+  font-size: 14px;
+}
+.jpdy-winner {
+  background-color: rgb(63, 81, 181);
+  color: white;
+  padding-left: 0;
+}
+.jpdy-cell-width {
+  max-width: 75px;
+}
+.jpdy-pts-label {
+  font-size: 17px;
+  text-transform: uppercase;
+  align-self: center;
+}
+.jpdy-fine-print {
+  font-size: 10px;
+  text-align: center;
+  text-transform: uppercase;
+}
+#mw-profile__pic {
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+}
+.jpdy-layout .jpdy-header .mdl-textfield {
+  padding: 0px;
+  margin-top: 41px;
+}
+.jpdy-layout .jpdy-header .mdl-textfield .mdl-textfield__expandable-holder {
+  bottom: 19px;
+}
+.jpdy-layout .mdl-layout__header .mdl-layout__drawer-button {
+  color: rgba(0, 0, 0, 0.54);
+}
+.mdl-layout__drawer .avatar {
+  margin-bottom: 16px;
+}
+.mw-drawer {
+  border: none;
+}
+/* iOS Safari specific workaround */
+.mw-drawer .mdl-menu__container {
+  z-index: -1;
+}
+.mw-drawer .mw-navigation {
+  z-index: -2;
+}
+/* END iOS Safari specific workaround */
+.mw-drawer .mdl-menu .mdl-menu__item {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-align-items: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+.mw-drawer__header {
+  box-sizing: border-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-direction: column;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-justify-content: flex-end;
+      -ms-flex-pack: end;
+          justify-content: flex-end;
+  padding: 16px;
+  height: 151px;
+}
+.jpdy-avatar-dropdown {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  position: relative;
+  -webkit-flex-direction: row;
+      -ms-flex-direction: row;
+          flex-direction: row;
+  -webkit-align-items: center;
+      -ms-flex-align: center;
+          align-items: center;
+  width: 100%;
+}
+
+.jpdy-navigation {
+  -webkit-flex-grow: 1;
+      -ms-flex-positive: 1;
+          flex-grow: 1;
+}
+.jpdy-layout .jpdy-navigation .mdl-navigation__link {
+  display: -webkit-flex !important;
+  display: -ms-flexbox !important;
+  display: flex !important;
+  -webkit-flex-direction: row;
+      -ms-flex-direction: row;
+          flex-direction: row;
+  -webkit-align-items: center;
+      -ms-flex-align: center;
+          align-items: center;
+  color: rgba(255, 255, 255, 0.56);
+  font-weight: 500;
+}
+.jpdy-layout .jpdy-navigation .mdl-navigation__link:hover {
+  background-color: #00BCD4;
+  color: #37474F;
+}
+.jpdy-navigation .mdl-navigation__link .material-icons {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.56);
+  margin-right: 32px;
+}
+
+.jpdy-cards {
+  -webkit-align-items: flex-start;
+      -ms-flex-align: start;
+              -ms-grid-row-align: flex-start;
+          align-items: flex-start;
+  -webkit-align-content: flex-start;
+      -ms-flex-line-pack: start;
+          align-content: flex-start;
+}
+.jpdy-cards .jpdy-separator {
+  height: 32px;
+}
+.jpdy-cards .mdl-card__title.mdl-card__title {
+  color: white;
+  font-size: 24px;
+  font-weight: 400;
+}
+.jpdy-cards ul {
+  padding: 0;
+}
+.jpdy-cards h3 {
+  font-size: 1em;
+}
+.jpdy-cards .mdl-card__actions a {
+  color: #00BCD4;
+  text-decoration: none;
+}
+#mw-footer {
+  width: 100%;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+.mw-entry {
+  display: flex;
+  flex-direction: row;
+  background-color: white;
+  align-items: center;
+  height: 40px;
+}
+
+.mw-entry-text {
+  flex: 1;
+  padding: 0 10px;
+  text-align: right;
+}
+
+.mw-entry-vote {
+  box-sizing: border-box;
+  font-size: 2em;
+  border: 2px solid #333;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  margin: 2px;
+}
+
+.mw-entry-vote.selected {
+  background-color: red;
+}

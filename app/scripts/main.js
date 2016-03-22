@@ -8,13 +8,13 @@
       timeOffset, turnStartTime; //turnObject;
   var fb = new Firebase('https://moword.firebaseio.com');
   var fbConnected = fb.child('.info/connected');
-  var storyTextElement = querySelector('#storyText');
-  var storyInputElement = querySelector('#storyInput');
-  var loginWindow = querySelector('#login');
+  var storyTextElement = querySelector('#mw-story-text');
+  var storyInputElement = querySelector('#mw-input');
+  var loginWindow = querySelector('#mw-login');
   var googleLogin = querySelector('#googleLogin');
   var authButton = querySelector('#authButton');
   var loggedIn = false;
-  var timer = querySelector('#timer');
+  var timer = querySelector('#mw-timer');
   var turnKeys = [];
   var turnInProgress = false;
 
@@ -65,7 +65,7 @@
     var i, children;
 
     for (i = 1; i <= 5; i++) {
-      children = querySelector('#entry' + i).children;
+      children = querySelector('#mw-entry' + i).children;
       children[1].addEventListener('click', entryVote);
       children[2].addEventListener('click', entryVote);
     }
@@ -101,17 +101,18 @@
     console.log('adding entry to choices');
     var turnEntry = snapshot.val();
     var turnEntryKey = snapshot.key();
-    var entryCount, entryElement;
+    var entryCount;
+    var entryElement;
 
     entryCount = turnKeys.push(turnEntryKey);
-    entryElement = querySelector('#entry' + entryCount);
-    entryElement.classList.remove('none');
-    entryElement.classList.add('entry');
+    entryElement = querySelector('#mw-entry' + entryCount);
+    entryElement.classList.remove('hidden');
+    entryElement.classList.add('mw-entry');
     entryElement.children[0].textContent = turnEntry.entry;
     if (userId === turnEntry.user) {
       entryElement.children[1].classList.add('selected');
     }
-    querySelector('main').style.marginBottom = querySelector('#footer').clientHeight + 'px';
+    //querySelector('main').style.marginBottom = querySelector('#mw-footer').clientHeight + 'px';
     if (entryCount >= 5) {
       storyInputElement.disabled = true;
       storyInputElement.textContent = '';
@@ -124,10 +125,10 @@
     var i, entryElement;
     
     for (i = 1; i <= 5; i++) {
-      entryElement = querySelector('#entry' + i);
+      entryElement = querySelector('#mw-entry' + i);
       entryElement.children[0].textContent = '';
-      entryElement.classList.add('none');
-      entryElement.classList.remove('entry');
+      entryElement.classList.add('hidden');
+      entryElement.classList.remove('mw-entry');
       entryElement.children[1].classList.remove('selected');
       entryElement.children[2].classList.remove('selected');
     }
@@ -148,9 +149,9 @@
     antiVote = vote === 'pro' ? 'con' : 'pro';
     for (i = 1; i <= 5; i++) {
       if (vote === 'pro') {
-        querySelector('#entry' + i).children[1].classList.remove('selected');
+        querySelector('#mw-entry' + i).children[1].classList.remove('selected');
       } else {
-        querySelector('#entry' + i).children[2].classList.remove('selected');
+        querySelector('#mw-entry' + i).children[2].classList.remove('selected');
       }
     }
     source.classList.add('selected');
@@ -187,7 +188,8 @@
   }
 
   function scrollToBottom() {
-    window.scrollTo(0, querySelector('main').clientHeight);
+    var main = querySelector('main');
+    main.scrollTop = main.scrollHeight;
   }
 
   // record what story the user is currently in
@@ -239,7 +241,7 @@
   });
 
   googleLogin.addEventListener('click', function() {
-    loginWindow.style.display = 'none';
+    loginWindow.classList.add('hidden');
     // prefer pop-ups, so we don't navigate away from the page
     fb.authWithOAuthPopup('google', function(error, authData) {
       if (error) {
@@ -276,18 +278,15 @@
   });
 
   function showProfile(makeVisible, authData) {
-    var profilePic = querySelector('#profilePic');
-    var profileName = querySelector('#profileName');
-    var profileGreeting = querySelector('#profileGreeting');
+    var profilePic = querySelector('#mw-profile__pic');
+    var profileName = querySelector('#mw-profile__name');
 
     if (makeVisible) {
       profileName.textContent = authData.google.displayName.split(' ')[0];
-      profileGreeting.style.display = 'block';
       profilePic.setAttribute('src', authData.google.profileImageURL);
       profilePic.style.display = 'block';
     } else {
-      profileGreeting.style.display = 'none';
-      profilePic.style.display = 'none';
+      profilePic.classList.add('hidden');
     }
   }
 
