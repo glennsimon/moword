@@ -20,9 +20,33 @@ html, body {
 .mdl-data-table td:first-of-type, .mdl-data-table th:first-of-type {
   text-align: left;
 }
+#mw-input {
+  /*border: none;
+  border-bottom: 1px solid rgba(0,0,0,.12);
+  display: block;
+  font-size: 16px;
+  margin: 0;
+  padding: 4px 0;
+  width: 100%;
+  text-align: left;
+  color: inherit;*/
+}
 #mw-timer {
   font-size: 2em;
   font-weight: bold;
+}
+.mdl-textfield {
+  width: 150px;
+  padding: 0;
+}
+.mdl-textfield__input {
+  padding: 2px 0;
+}
+.mdl-textfield__label {
+  top: 1px;
+}
+.mdl-textfield__label:after {
+  bottom: 0;
 }
 #mw-login {
   position: fixed;
@@ -39,6 +63,7 @@ html, body {
 }
 #mw-story-text {
   font-size: 16px;
+  line-height: 30px;
 }
 .mw-login__heading {
   font-size: 200%;

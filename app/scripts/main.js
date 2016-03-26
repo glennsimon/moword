@@ -222,6 +222,7 @@
         }
       });
       storyInputElement.value = '';
+      storyInputElement.parentElement.classList.remove('is-dirty');
       storyInputElement.disabled = true;  //uncomment before deploy
     }
   });
