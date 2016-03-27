@@ -17,8 +17,14 @@
 html, body {
   font-family: 'Roboto', 'Helvetica', sans-serif;
 }
+footer table {
+  width: 100%;
+}
 .mdl-data-table td:first-of-type, .mdl-data-table th:first-of-type {
   text-align: left;
+}
+#mw-logo {
+  height: 40px;
 }
 #mw-input {
   /*border: none;
@@ -47,6 +53,9 @@ html, body {
 }
 .mdl-textfield__label:after {
   bottom: 0;
+}
+.mdl-layout__header-row {
+  padding-left: 50px;
 }
 #mw-login {
   position: fixed;
@@ -248,12 +257,12 @@ html, body {
 }
 #mw-footer {
   width: 100%;
-  bottom: 0;
+  /*bottom: 0;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
-  position: relative;
+  position: relative;*/
 }
 .mw-entry {
   display: flex;
@@ -267,6 +276,7 @@ html, body {
   flex: 1;
   padding: 0 10px;
   text-align: right;
+  font-size: 16px;
 }
 
 .mw-entry-vote {

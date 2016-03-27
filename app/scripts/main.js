@@ -110,7 +110,8 @@
     entryElement.classList.add('mw-entry');
     entryElement.children[0].textContent = turnEntry.entry;
     if (userId === turnEntry.user) {
-      entryElement.children[1].classList.add('selected');
+      entryElement.children[1].children[0].classList.remove('mdl-color-text--grey-400');
+      entryElement.children[1].children[0].classList.add('mdl-color-text--accent');
     }
     //querySelector('main').style.marginBottom = querySelector('#mw-footer').clientHeight + 'px';
     if (entryCount >= 5) {
@@ -128,9 +129,11 @@
       entryElement = querySelector('#mw-entry' + i);
       entryElement.children[0].textContent = '';
       entryElement.classList.add('hidden');
-      entryElement.classList.remove('mw-entry');
-      entryElement.children[1].classList.remove('selected');
-      entryElement.children[2].classList.remove('selected');
+      //entryElement.classList.remove('mw-entry');
+      entryElement.children[1].children[0].classList.remove('mdl-color-text--accent');
+      entryElement.children[1].children[0].classList.add('mdl-color-text--grey-400');
+      entryElement.children[2].children[0].classList.remove('mdl-color-text--accent');
+      entryElement.children[2].children[0].classList.add('mdl-color-text--grey-400');
     }
     storyInputElement.disabled = false;
     turnInProgress = false;
@@ -141,21 +144,28 @@
 
   // enter vote for one of the choices *
   function entryVote(e) {
-    var i, source, entryIndex, vote, antiVote;
+    var i, source, entryIndex, element, vote, antiVote;
 
     source = e.srcElement;
-    entryIndex = Number(source.parentNode.id.slice(-1)) - 1;
-    vote = source.textContent === '+' ? 'pro' : 'con';
+    entryIndex = Number(source.parentNode.parentNode.id.slice(-1)) - 1;
+    vote = source.textContent === 'favorite' ? 'pro' : 'con';
     antiVote = vote === 'pro' ? 'con' : 'pro';
     for (i = 1; i <= 5; i++) {
       if (vote === 'pro') {
-        querySelector('#mw-entry' + i).children[1].classList.remove('selected');
+        element = querySelector('#mw-entry' + i).children[1].children[0];
+        element.classList.remove('mdl-color-text--grey-400');
+        element.classList.add('mdl-color-text--accent');
       } else {
-        querySelector('#mw-entry' + i).children[2].classList.remove('selected');
+        element = querySelector('#mw-entry' + i).children[2].children[0];
+        element.classList.remove('mdl-color-text--grey-400');
+        element.classList.add('mdl-color-text--accent');
       }
     }
-    source.classList.add('selected');
-    source.parentNode.children[vote === 'pro' ? 2 : 1].classList.remove('selected');
+    source.classList.remove('mdl-color-text--grey-400');
+    source.classList.add('mdl-color-text--accent');
+    element = source.parentNode.parentNode.children[vote === 'pro' ? 2 : 1].children[0];
+    element.classList.remove('mdl-color-text--accent');
+    element.classList.add('mdl-color-text--grey-400');
     fbTurn.child('entries').once('value', function(snapshot) {
       var key, entry;
       var entries = snapshot.val();
@@ -174,9 +184,9 @@
       // add new 'pro' or 'con' vote and delete opposite
       key = turnKeys[entryIndex];
       fbTurn.child('entries').child(key).child('entryVotes').child(vote).child(userId).set(true);
-      if (entries[key].entryVotes.con[userId]) {
+      //if (entries[key].entryVotes.con[userId]) {
         fbTurn.child('entries').child(key).child('entryVotes').child(antiVote).child(userId).remove();
-      }
+      //}
     });
   }
 
