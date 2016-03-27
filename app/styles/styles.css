@@ -20,8 +20,51 @@ html, body {
 footer table {
   width: 100%;
 }
-.mdl-data-table td:first-of-type, .mdl-data-table th:first-of-type {
+.mw-entry-table {
+  position: relative;
+  border: 1px solid rgba(0,0,0,.12);
+  border-collapse: collapse;
+  white-space: nowrap;
+  background-color: #fff;
+}
+.mw-entry-table td:first-of-type {
   text-align: left;
+  padding-left: 24px;
+}
+.mw-entry-table td {
+  position: relative;
+  height: 48px;
+  box-sizing: border-box;
+  border-top: 1px solid rgba(0,0,0,.12);
+  border-bottom: 1px solid rgba(0,0,0,.12);
+  padding: 12px 18px 12px;
+  vertical-align: middle;
+}
+.mw-entry {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  background-color: #fff;
+  align-items: center;
+  height: 48px;
+}
+
+.mw-entry-text {
+  flex: 1;
+  padding: 0 10px;
+  text-align: right;
+  font-size: 16px;
+}
+
+.mw-entry-vote {
+  box-sizing: border-box;
+  font-size: 2em;
+  border: 2px solid #333;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  margin: 2px;
 }
 #mw-logo {
   height: 40px;
@@ -263,33 +306,4 @@ footer table {
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;*/
-}
-.mw-entry {
-  display: flex;
-  flex-direction: row;
-  background-color: white;
-  align-items: center;
-  height: 40px;
-}
-
-.mw-entry-text {
-  flex: 1;
-  padding: 0 10px;
-  text-align: right;
-  font-size: 16px;
-}
-
-.mw-entry-vote {
-  box-sizing: border-box;
-  font-size: 2em;
-  border: 2px solid #333;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  text-align: center;
-  margin: 2px;
-}
-
-.mw-entry-vote.selected {
-  background-color: red;
 }

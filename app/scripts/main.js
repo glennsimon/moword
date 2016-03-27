@@ -66,8 +66,8 @@
 
     for (i = 1; i <= 5; i++) {
       children = querySelector('#mw-entry' + i).children;
-      children[1].addEventListener('click', entryVote);
-      children[2].addEventListener('click', entryVote);
+      children[1].children[0].addEventListener('click', entryVote);
+      children[2].children[0].addEventListener('click', entryVote);
     }
     console.log('initializing firebase callbacks');
     fbTurn.child('turnStartTime').on('value', function(snapshot) {
@@ -153,12 +153,12 @@
     for (i = 1; i <= 5; i++) {
       if (vote === 'pro') {
         element = querySelector('#mw-entry' + i).children[1].children[0];
-        element.classList.remove('mdl-color-text--grey-400');
-        element.classList.add('mdl-color-text--accent');
+        element.classList.remove('mdl-color-text--accent');
+        element.classList.add('mdl-color-text--grey-400');
       } else {
         element = querySelector('#mw-entry' + i).children[2].children[0];
-        element.classList.remove('mdl-color-text--grey-400');
-        element.classList.add('mdl-color-text--accent');
+        element.classList.remove('mdl-color-text--accent');
+        element.classList.add('mdl-color-text--grey-400');
       }
     }
     source.classList.remove('mdl-color-text--grey-400');
@@ -184,9 +184,7 @@
       // add new 'pro' or 'con' vote and delete opposite
       key = turnKeys[entryIndex];
       fbTurn.child('entries').child(key).child('entryVotes').child(vote).child(userId).set(true);
-      //if (entries[key].entryVotes.con[userId]) {
-        fbTurn.child('entries').child(key).child('entryVotes').child(antiVote).child(userId).remove();
-      //}
+      fbTurn.child('entries').child(key).child('entryVotes').child(antiVote).child(userId).remove();
     });
   }
 
