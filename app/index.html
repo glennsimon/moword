@@ -51,8 +51,8 @@
     <script src="https://cdn.firebase.com/js/client/2.3.2/firebase.js"></script>
   </head>
   <body>
-    <div class="jpdy-layout mdl-layout mdl-js-layout mdl-layout--fixed-drawer mdl-layout--fixed-header">
-      <header class="jpdy-header mdl-layout__header mdl-color--primary mdl-color-text--white">
+    <div class="mw-layout mdl-layout mdl-js-layout mdl-layout--fixed-drawer mdl-layout--fixed-header">
+      <header class="mw-header mdl-layout__header mdl-color--primary mdl-color-text--white">
         <div class="mdl-layout__header-row">
           <img id="mw-logo" src="images/logoFadingSerifs.png" alt="logo">
           <span class="mdl-layout-title">&nbsp;MoWord</span>
@@ -63,7 +63,7 @@
       <div class="mw-drawer mdl-layout__drawer mdl-color--blue-grey-900 mdl-color-text--blue-grey-50">
         <header class="mw-drawer__header">
           <img id="mw-profile__pic" alt="profile picture">
-          <div class="jpdy-avatar-dropdown">
+          <div class="mw-avatar-dropdown">
             <span id="mw-profile__name"></span>
             <div class="mdl-layout-spacer"></div>
             <button id="accbtn" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--icon">
@@ -78,14 +78,14 @@
           </div>
         </header>
         <nav class="mw-navigation mdl-navigation mdl-color--blue-grey-800">
-          <a class="mdl-navigation__link" href="#jpdy-game"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">home</i>Home</a>
-          <a class="mdl-navigation__link" href="#jpdy-scores"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">group</i>Player Scores</a>
-          <a class="mdl-navigation__link" href="#jpdy-prev-games"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">list</i>Past Games</a>
-          <a class="mdl-navigation__link" href="#jpdy-practice-nav"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">refresh</i>Practice</a>
+          <a class="mdl-navigation__link" href="#mw-game"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">home</i>Home</a>
+          <a class="mdl-navigation__link" href="#mw-scores"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">group</i>Player Scores</a>
+          <a class="mdl-navigation__link" href="#mw-prev-games"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">list</i>Past Games</a>
+          <a class="mdl-navigation__link" href="#mw-practice-nav"><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">refresh</i>Practice</a>
           <div class="mdl-layout-spacer"></div>
         </nav>
       </div>
-      <main class="mdl-layout__content mdl-color--grey-100">
+      <section id="mw-main" class="mdl-layout__content mdl-color--grey-100">
         <div id="mw-story"
             class="mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid">
           <div>
@@ -96,7 +96,8 @@
             </span>
           </div>
         </div>
-      </main>
+
+      </section>
 
       <div id="mw-login">
         <div class="mw-login__heading">Log In</div>
@@ -105,33 +106,7 @@
         </div>
       </div>
 
-      <footer id="mw-footer">
-        <!-- div id="mw-entry1" class="mw-entry hidden">
-          <div class="mw-entry-text"></div>
-          <div class="mw-entry-vote">+</div>
-          <div class="mw-entry-vote">-</div>
-        </div>
-        <div id="mw-entry2" class="mw-entry hidden">
-          <div class="mw-entry-text"></div>
-          <div class="mw-entry-vote">+</div>
-          <div class="mw-entry-vote">-</div>
-        </div>
-        <div id="mw-entry3" class="mw-entry hidden">
-          <div class="mw-entry-text"></div>
-          <div class="mw-entry-vote">+</div>
-          <div class="mw-entry-vote">-</div>
-        </div>
-        <div id="mw-entry4" class="mw-entry hidden">
-          <div class="mw-entry-text"></div>
-          <div class="mw-entry-vote">+</div>
-          <div class="mw-entry-vote">-</div>
-        </div>
-        <div id="mw-entry5" class="mw-entry hidden">
-          <div class="mw-entry-text"></div>
-          <div class="mw-entry-vote">+</div>
-          <div class="mw-entry-vote">-</div>
-        </div -->
-
+      <div id="mw-footer">
         <table class="mw-entry-table">
           <tbody>
             <tr id="mw-entry1" class="mw-entry hidden">
@@ -161,7 +136,7 @@
             </tr>
           </tbody>
         </table>
-      </footer>
+      </div>
 
     </div>
     <script src="https://code.getmdl.io/1.1.1/material.min.js"></script>

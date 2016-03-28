@@ -113,7 +113,7 @@
       entryElement.children[1].children[0].classList.remove('mdl-color-text--grey-400');
       entryElement.children[1].children[0].classList.add('mdl-color-text--accent');
     }
-    //querySelector('main').style.marginBottom = querySelector('#mw-footer').clientHeight + 'px';
+    //querySelector('#mw-main').style.marginBottom = querySelector('#mw-footer').clientHeight + 'px';
     if (entryCount >= 5) {
       storyInputElement.disabled = true;
       storyInputElement.textContent = '';
@@ -139,7 +139,7 @@
     turnInProgress = false;
     turnKeys = [];
     scrollToBottom();
-    querySelector('main').style.marginBottom = 0;
+    querySelector('#mw-main').style.marginBottom = 0;
   }
 
   // enter vote for one of the choices *
@@ -196,7 +196,7 @@
   }
 
   function scrollToBottom() {
-    var main = querySelector('main');
+    var main = querySelector('#mw-main');
     main.scrollTop = main.scrollHeight;
   }
 
